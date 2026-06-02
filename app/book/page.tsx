@@ -12,11 +12,13 @@ const typeLabel: Record<string, string> = {
 export default async function HomePage() {
   const programs = await getProgramsFromSheet();
 
-  // Filter out grouped items — parties, training packs, apparel handled separately
-  const excludedIds = ['training-10pack', 'training-20pack', 'dri-fit-apparel'];
+  // Filter out grouped items — parties, training packs, apparel, summer training handled separately
+  const excludedIds = ['training-10pack', 'training-20pack', 'dri-fit-apparel', 'summer-training-academy'];
   const mainPrograms = programs.filter(p => p.type !== 'party' && !excludedIds.includes(p.id));
   const hasParties = programs.some(p => p.type === 'party');
   const hasTrainingPackages = programs.some(p => p.id === 'training-10pack' || p.id === 'training-20pack');
+  const hasSummerTraining = programs.some(p => p.id === 'summer-training-academy');
+  const summerTraining = programs.find(p => p.id === 'summer-training-academy');
   const apparel = programs.find(p => p.id === 'dri-fit-apparel');
 
   return (
@@ -206,73 +208,60 @@ export default async function HomePage() {
             </div>
           )}
 
+          {/* Summer Training Academy card */}
+          {hasSummerTraining && (
+            <div style={{ backgroundColor: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.07)', display: 'flex', flexDirection: 'column' }}>
+              <FlyerImage src="/training.avif" alt="Summer Training Academy" />
+              <div style={{ background: 'linear-gradient(135deg, #29ABE2 0%, #0093c4 100%)', padding: '18px 24px', position: 'relative' }}>
+                <span style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', fontSize: '10px', fontWeight: '700', padding: '3px 10px', borderRadius: '20px', letterSpacing: '1px', textTransform: 'uppercase' }}>Group</span>
+                <h2 style={{ color: 'white', fontSize: '20px', fontWeight: '800', lineHeight: '1.25', marginBottom: '4px' }}>Shooting Stars Academy Summer Training</h2>
+                <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', fontWeight: '600' }}>June 8 – August 6, 2026 · Ages U5–U12</span>
+              </div>
+              <div style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <p style={{ fontSize: '14px', color: '#666', lineHeight: '1.6' }}>
+                  Intensive summer training for players ages 4–12. Choose your age group and pick your sessions.
+                </p>
+                <ul style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <li style={{ fontSize: '13px', color: '#333', fontWeight: '600' }}>U6 &amp; Under (U5, U6) — Tue &amp; Thu 5:30–6:30PM</li>
+                  <li style={{ fontSize: '13px', color: '#333', fontWeight: '600' }}>U7–U9 (U7, U8, U9) — Mon &amp; Wed 6:30–7:30PM</li>
+                  <li style={{ fontSize: '13px', color: '#333', fontWeight: '600' }}>U10 &amp; Up (U10, U11, U12) — Mon &amp; Wed 6:30–7:30PM</li>
+                </ul>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <span style={{ fontSize: '24px', fontWeight: '900', color: '#1a1a1a' }}>$20/session</span>
+                    <p style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>Price includes 4% service charge</p>
+                  </div>
+                  <Link href="/register/summer-training-academy" style={{ backgroundColor: '#29ABE2', color: 'white', padding: '12px 24px', borderRadius: '10px', fontWeight: '700', fontSize: '14px', textDecoration: 'none' }}>
+                    Book Now
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Birthday Parties card */}
           {hasParties && (
-            <div style={{
-              backgroundColor: 'white',
-              borderRadius: '16px',
-              overflow: 'hidden',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.07)',
-              display: 'flex',
-              flexDirection: 'column',
-            }}>
+            <div style={{ backgroundColor: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.07)', display: 'flex', flexDirection: 'column' }}>
               <FlyerImage src="/birthday.avif" alt="Birthday Parties" />
-              <div style={{
-                background: 'linear-gradient(135deg, #f9a825 0%, #f57f17 100%)',
-                padding: '18px 24px',
-                position: 'relative',
-              }}>
-                <span style={{
-                  position: 'absolute',
-                  top: '16px',
-                  right: '16px',
-                  backgroundColor: 'rgba(255,255,255,0.25)',
-                  color: 'white',
-                  fontSize: '10px',
-                  fontWeight: '700',
-                  padding: '3px 10px',
-                  borderRadius: '20px',
-                  letterSpacing: '1px',
-                  textTransform: 'uppercase',
-                }}>
-                  Party
-                </span>
-                <h2 style={{ color: 'white', fontSize: '20px', fontWeight: '800', lineHeight: '1.25', marginBottom: '6px' }}>
-                  Birthday Parties
-                </h2>
-                <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', fontWeight: '600' }}>Silver &amp; Gold Packages</span>
+              <div style={{ background: 'linear-gradient(135deg, #f9a825 0%, #f57f17 100%)', padding: '18px 24px', position: 'relative' }}>
+                <span style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(255,255,255,0.25)', color: 'white', fontSize: '10px', fontWeight: '700', padding: '3px 10px', borderRadius: '20px', letterSpacing: '1px', textTransform: 'uppercase' }}>Party</span>
+                <h2 style={{ color: 'white', fontSize: '20px', fontWeight: '800', lineHeight: '1.25', marginBottom: '4px' }}>Birthday Parties</h2>
+                <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', fontWeight: '600' }}>Fridays, Saturdays &amp; Sundays</span>
               </div>
-
               <div style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <p style={{ fontSize: '14px', color: '#666', lineHeight: '1.6', flex: 1 }}>
-                  Celebrate your birthday at Shooting Stars! Multiple Silver and Gold packages available on Fridays, Saturdays, and Sundays.
+                <p style={{ fontSize: '14px', color: '#666', lineHeight: '1.6' }}>
+                  Celebrate your birthday at Shooting Stars! Choose Silver (2 hrs) or Gold (3 hrs). More than 20 kids? $12 per child.
                 </p>
-
-                <div style={{ backgroundColor: '#f7f8fa', borderRadius: '10px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div style={{ display: 'flex', gap: '8px', fontSize: '13px' }}>
-                    <span style={{ color: '#999', minWidth: '44px' }}>Days</span>
-                    <span style={{ color: '#333', fontWeight: '600' }}>Fri, Sat &amp; Sun</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', fontSize: '13px' }}>
-                    <span style={{ color: '#999', minWidth: '44px' }}>From</span>
-                    <span style={{ color: '#333', fontWeight: '600' }}>$485 total · $156.50 deposit</span>
-                  </div>
-                </div>
-
+                <ul style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <li style={{ fontSize: '13px', color: '#333', fontWeight: '600' }}>Silver Package (2 hrs) — 12–2PM, 4–6PM, or 6:30–8:30PM</li>
+                  <li style={{ fontSize: '13px', color: '#333', fontWeight: '600' }}>Gold Package (3 hrs) — 12–3PM (Sat &amp; Sun), 4–7PM, or 6:30–9:30PM</li>
+                </ul>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
                     <span style={{ fontSize: '24px', fontWeight: '900', color: '#1a1a1a' }}>$485+</span>
-                    <p style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>Price includes 4% service charge</p>
+                    <p style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>$156.50 deposit · Price includes 4% service charge</p>
                   </div>
-                  <Link href="/register/birthday-parties" style={{
-                    backgroundColor: '#f57f17',
-                    color: 'white',
-                    padding: '12px 24px',
-                    borderRadius: '10px',
-                    fontWeight: '700',
-                    fontSize: '14px',
-                    textDecoration: 'none',
-                  }}>
+                  <Link href="/register/birthday-parties" style={{ backgroundColor: '#f57f17', color: 'white', padding: '12px 24px', borderRadius: '10px', fontWeight: '700', fontSize: '14px', textDecoration: 'none' }}>
                     View Packages
                   </Link>
                 </div>
