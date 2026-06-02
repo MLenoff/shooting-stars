@@ -76,7 +76,7 @@ export const programs: Program[] = [
     id: 'summer-training-academy',
     name: 'Shooting Stars Academy Summer Training',
     type: 'group',
-    description: 'Intensive summer training program for youth players. Age groups are based on your child\'s birth year: U5 (born 2021), U6 (born 2020), U7 (born 2019), U8 (born 2018), U9 (born 2017), U10 (born 2016), U11 (born 2015), U12 (born 2014). Not sure which group? We\'ll confirm when we call you after registration.',
+    description: 'Intensive summer training program for youth players. Age groups are based on your child\'s birth year: U5 = age 4-5 (born 2021), U6 = age 5-6 (born 2020), U7 = age 6-7 (born 2019), U8 = age 7-8 (born 2018), U9 = age 8-9 (born 2017), U10 = age 9-10 (born 2016), U11 = age 10-11 (born 2015), U12 = age 11-12 (born 2014). Not sure which group? We\'ll confirm when we call you after registration.',
     dates: 'June 8 - August 6, 2026',
     times: 'Tuesday & Thursday 5:30PM - 6:30PM / Monday & Wednesday 6:30PM - 7:30PM',
     price: 360,
