@@ -77,10 +77,20 @@ export async function getProgramsFromSheet(): Promise<Program[]> {
         };
       });
 
-    // Merge: sheet takes priority; any local program not in sheet is included as fallback
+    // Merge: sheet takes priority; any local program not in sheet is included as fallback.
+    // Complex fields (sessionGroups, pricePerSession) can't live in the sheet — always pull from local.
+    const localMap = new Map(local.map(p => [p.id, p]));
+    const enriched = sheetPrograms.map(p => {
+      const lp = localMap.get(p.id);
+      return {
+        ...p,
+        sessionGroups: lp?.sessionGroups,
+        pricePerSession: lp?.pricePerSession,
+      };
+    });
     const sheetIds = new Set(sheetPrograms.map(p => p.id));
     const localFallbacks = local.filter(p => !sheetIds.has(p.id));
-    return [...sheetPrograms, ...localFallbacks];
+    return [...enriched, ...localFallbacks];
   } catch (err) {
     console.error('Failed to load programs from sheet, falling back to local data:', err);
     return local;
