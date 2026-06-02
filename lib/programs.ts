@@ -91,7 +91,7 @@ export const programs: Program[] = [
     description: 'Develop new skills in a fun, nurturing environment for our youngest players.',
     dates: 'Ongoing',
     times: 'See schedule',
-    price: 46.80,
+    price: 160,
     ageGroup: 'Ages 2-6',
     active: true,
     flyer: '/twinkle.avif',
