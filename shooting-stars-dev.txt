@@ -1,0 +1,1 @@
+cd /Users/mlenoff/Desktop/Claude\ Projects/Shooting\ Stars\ Indoor\ Soccer/shooting-stars && npx next dev
