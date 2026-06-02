@@ -15,7 +15,7 @@ export default function SectionNav() {
           <a
             key={href}
             href={href}
-            style={{ display: 'inline-block', padding: '14px 18px', fontSize: '13px', fontWeight: '700', color, textDecoration: 'none', whiteSpace: 'nowrap', borderBottom: '3px solid transparent', transition: 'border-color 0.15s' }}
+            style={{ display: 'inline-block', padding: '18px 24px', fontSize: '15px', fontWeight: '700', color, textDecoration: 'none', whiteSpace: 'nowrap', borderBottom: '3px solid transparent', transition: 'border-color 0.15s' }}
             onMouseOver={e => (e.currentTarget.style.borderBottomColor = color)}
             onMouseOut={e => (e.currentTarget.style.borderBottomColor = 'transparent')}
           >
