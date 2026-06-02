@@ -1,5 +1,10 @@
 export type ProgramType = 'group' | 'one-on-one' | 'rental' | 'party' | 'apparel';
 
+export interface SessionGroup {
+  label: string;
+  sessions: string[];
+}
+
 export interface Program {
   id: string;
   name: string;
@@ -8,6 +13,7 @@ export interface Program {
   dates: string;
   times: string;
   price: number;
+  pricePerSession?: number;
   deposit?: number;
   totalPrice?: number;
   ageGroup?: string;
@@ -15,6 +21,7 @@ export interface Program {
   flyer?: string;
   active: boolean;
   sessions?: string[];
+  sessionGroups?: SessionGroup[];
   adultOnly?: boolean;
   requiresDatePicker?: boolean;
   contactUrl?: string;
@@ -76,32 +83,45 @@ export const programs: Program[] = [
     id: 'summer-training-academy',
     name: 'Shooting Stars Academy Summer Training',
     type: 'group',
-    description: 'Intensive summer training program for youth players ages 4–12. Age groups are based on a September 1 cutoff. U6 & Under (U5, U6): Tuesday & Thursday 5:30PM–6:30PM. U9 & Under (U7, U8, U9): Monday & Wednesday 6:30PM–7:30PM. U10 & Up (U10, U11, U12): Monday & Wednesday 6:30PM–7:30PM. Not sure which group your child is in? We\'ll confirm when we call you after registration.',
+    description: 'Intensive summer training program for youth players. Age groups use a September 1 cutoff. U6 & Under (U5, U6): Tuesday & Thursday 5:30PM–6:30PM. U7–U9 (U7, U8, U9): Monday & Wednesday 6:30PM–7:30PM. U10 & Up (U10, U11, U12): Monday & Wednesday 6:30PM–7:30PM. Not sure which group your child is in? We\'ll confirm when we call you after registration.',
     dates: 'June 8 - August 6, 2026',
-    times: 'U6 & Under: Tue & Thu 5:30–6:30PM | U9 & Under: Mon & Wed 6:30–7:30PM | U10 & Up: Mon & Wed 6:30–7:30PM',
+    times: 'U6 & Under: Tue & Thu 5:30–6:30PM | U7–U9: Mon & Wed 6:30–7:30PM | U10 & Up: Mon & Wed 6:30–7:30PM',
     price: 360,
+    pricePerSession: 20,
     ageGroup: 'U5–U12',
     active: true,
     flyer: '/training.avif',
-    sessions: [
-      'June 9, 2026 at 5:30 PM',
-      'June 11, 2026 at 5:30 PM',
-      'June 16, 2026 at 5:30 PM',
-      'June 18, 2026 at 5:30 PM',
-      'June 23, 2026 at 5:30 PM',
-      'June 25, 2026 at 5:30 PM',
-      'June 30, 2026 at 5:30 PM',
-      'July 2, 2026 at 5:30 PM',
-      'July 7, 2026 at 5:30 PM',
-      'July 9, 2026 at 5:30 PM',
-      'July 14, 2026 at 5:30 PM',
-      'July 16, 2026 at 5:30 PM',
-      'July 21, 2026 at 5:30 PM',
-      'July 23, 2026 at 5:30 PM',
-      'July 28, 2026 at 5:30 PM',
-      'July 30, 2026 at 5:30 PM',
-      'August 4, 2026 at 5:30 PM',
-      'August 6, 2026 at 5:30 PM',
+    sessionGroups: [
+      {
+        label: 'U6 & Under (U5, U6) — Tue & Thu 5:30–6:30PM',
+        sessions: [
+          'June 9, 2026', 'June 11, 2026', 'June 16, 2026', 'June 18, 2026',
+          'June 23, 2026', 'June 25, 2026', 'June 30, 2026', 'July 2, 2026',
+          'July 7, 2026', 'July 9, 2026', 'July 14, 2026', 'July 16, 2026',
+          'July 21, 2026', 'July 23, 2026', 'July 28, 2026', 'July 30, 2026',
+          'August 4, 2026', 'August 6, 2026',
+        ],
+      },
+      {
+        label: 'U7–U9 (U7, U8, U9) — Mon & Wed 6:30–7:30PM',
+        sessions: [
+          'June 8, 2026', 'June 10, 2026', 'June 15, 2026', 'June 17, 2026',
+          'June 22, 2026', 'June 24, 2026', 'June 29, 2026', 'July 1, 2026',
+          'July 6, 2026', 'July 8, 2026', 'July 13, 2026', 'July 15, 2026',
+          'July 20, 2026', 'July 22, 2026', 'July 27, 2026', 'July 29, 2026',
+          'August 3, 2026', 'August 5, 2026',
+        ],
+      },
+      {
+        label: 'U10 & Up (U10, U11, U12) — Mon & Wed 6:30–7:30PM',
+        sessions: [
+          'June 8, 2026', 'June 10, 2026', 'June 15, 2026', 'June 17, 2026',
+          'June 22, 2026', 'June 24, 2026', 'June 29, 2026', 'July 1, 2026',
+          'July 6, 2026', 'July 8, 2026', 'July 13, 2026', 'July 15, 2026',
+          'July 20, 2026', 'July 22, 2026', 'July 27, 2026', 'July 29, 2026',
+          'August 3, 2026', 'August 5, 2026',
+        ],
+      },
     ],
   },
   {

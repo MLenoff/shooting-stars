@@ -3,7 +3,10 @@ import Stripe from 'stripe';
 
 export async function POST(req: NextRequest) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder');
-  const { program, form } = await req.json();
+  const { program, form, selectedSessions } = await req.json();
+  const price = (program.pricePerSession && selectedSessions?.length)
+    ? program.pricePerSession * selectedSessions.length
+    : program.price;
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
@@ -17,7 +20,7 @@ export async function POST(req: NextRequest) {
             name: program.name,
             description: `${program.dates} | ${program.times}`,
           },
-          unit_amount: Math.round(program.price * 100),
+          unit_amount: Math.round(price * 100),
         },
         quantity: 1,
       },

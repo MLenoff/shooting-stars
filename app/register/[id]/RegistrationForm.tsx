@@ -171,13 +171,20 @@ export default function RegistrationForm({ program }: { program: Program }) {
   const [form, setForm] = useState<FormData>(initialForm);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState('');
+  const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const isKidsProgram = !program.adultOnly;
   const isParty = program.type === 'party';
   const hasTimeSlots = !!(program.timeSlots?.length);
-  const totalSteps = (isParty || hasTimeSlots) ? 4 : 3;
+  const hasSessionGroups = !!(program.sessionGroups?.length);
+  const totalSteps = (isParty || hasTimeSlots || hasSessionGroups) ? 4 : 3;
+
+  const dynamicPrice = hasSessionGroups && program.pricePerSession
+    ? program.pricePerSession * selectedSessions.length
+    : (program.deposit ?? program.price);
 
   // For individual training: Tue & Thu only have the 4:30 slot
   const isIndividualTraining = ['individual-training', 'training-10pack', 'training-20pack'].includes(program.id);
@@ -200,7 +207,7 @@ export default function RegistrationForm({ program }: { program: Program }) {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ program, form, selectedDate, selectedTimeSlot }),
+        body: JSON.stringify({ program, form, selectedDate, selectedTimeSlot, selectedSessions }),
       });
       const data = await res.json();
       if (data.checkoutUrl) {
@@ -308,6 +315,96 @@ export default function RegistrationForm({ program }: { program: Program }) {
         </div>
       )}
 
+      {/* STEP 2 — Session Group Picker (summer training academy) */}
+      {step === 2 && hasSessionGroups && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <h2 style={{ fontSize: '17px', fontWeight: '700' }}>Select Your Group & Sessions</h2>
+
+          <div>
+            <p style={{ fontSize: '14px', fontWeight: '600', color: '#333', marginBottom: '12px' }}>Choose your age group <span style={{ color: 'red' }}>*</span></p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {program.sessionGroups?.map(group => (
+                <button
+                  key={group.label}
+                  onClick={() => {
+                    setSelectedGroup(group.label);
+                    setSelectedSessions([...group.sessions]);
+                  }}
+                  style={{
+                    padding: '14px 18px', borderRadius: '10px', textAlign: 'left',
+                    border: selectedGroup === group.label ? '2px solid #29ABE2' : '2px solid #e0e0e0',
+                    backgroundColor: selectedGroup === group.label ? '#e8f7fd' : 'white',
+                    color: selectedGroup === group.label ? '#0093c4' : '#333',
+                    fontWeight: selectedGroup === group.label ? '700' : '500',
+                    fontSize: '15px', cursor: 'pointer',
+                  }}
+                >
+                  {group.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {selectedGroup && (() => {
+            const group = program.sessionGroups?.find(g => g.label === selectedGroup);
+            const allSessions = group?.sessions || [];
+            return (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <p style={{ fontSize: '14px', fontWeight: '600', color: '#333' }}>
+                    Select sessions to attend <span style={{ color: 'red' }}>*</span>
+                  </p>
+                  <button
+                    onClick={() => setSelectedSessions(selectedSessions.length === allSessions.length ? [] : [...allSessions])}
+                    style={{ fontSize: '13px', color: '#29ABE2', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}
+                  >
+                    {selectedSessions.length === allSessions.length ? 'Deselect all' : 'Select all'}
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '320px', overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '12px' }}>
+                  {allSessions.map(session => (
+                    <label key={session} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '14px', color: '#333' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedSessions.includes(session)}
+                        onChange={e => {
+                          if (e.target.checked) setSelectedSessions(prev => [...prev, session]);
+                          else setSelectedSessions(prev => prev.filter(s => s !== session));
+                        }}
+                        style={{ width: '16px', height: '16px', flexShrink: 0 }}
+                      />
+                      {session}
+                    </label>
+                  ))}
+                </div>
+
+                <div style={{ marginTop: '12px', backgroundColor: '#e8f7fd', borderRadius: '8px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '14px', color: '#555' }}>{selectedSessions.length} of {allSessions.length} sessions selected</span>
+                  <span style={{ fontSize: '16px', fontWeight: '700', color: '#0093c4' }}>${(selectedSessions.length * (program.pricePerSession || 0)).toFixed(2)}</span>
+                </div>
+              </div>
+            );
+          })()}
+
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button onClick={() => setStep(1)} style={{ flex: 1, backgroundColor: '#f0f0f0', color: '#333', padding: '14px', borderRadius: '8px', fontWeight: '700', fontSize: '15px', border: 'none', cursor: 'pointer' }}>Back</button>
+            <button
+              onClick={() => {
+                if (!selectedGroup) { setError('Please select an age group.'); return; }
+                if (selectedSessions.length === 0) { setError('Please select at least one session.'); return; }
+                setError('');
+                setStep(3);
+              }}
+              style={{ flex: 2, backgroundColor: '#29ABE2', color: 'white', padding: '14px', borderRadius: '8px', fontWeight: '700', fontSize: '15px', border: 'none', cursor: 'pointer' }}
+            >
+              Continue
+            </button>
+          </div>
+          {error && <p style={{ color: 'red', fontSize: '13px' }}>{error}</p>}
+        </div>
+      )}
+
       {/* STEP 2 — Session Picker (elite group training / programs with time slots) */}
       {step === 2 && hasTimeSlots && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -394,8 +491,8 @@ export default function RegistrationForm({ program }: { program: Program }) {
         </div>
       )}
 
-      {/* STEP 2 (non-party/no-slots) or STEP 3 (party or time slots) — Waiver */}
-      {((step === 2 && !isParty && !hasTimeSlots) || (step === 3 && (isParty || hasTimeSlots))) && (
+      {/* STEP 2 (non-party/no-slots/no-groups) or STEP 3 (party, time slots, or session groups) — Waiver */}
+      {((step === 2 && !isParty && !hasTimeSlots && !hasSessionGroups) || (step === 3 && (isParty || hasTimeSlots || hasSessionGroups))) && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <h2 style={{ fontSize: '17px', fontWeight: '700' }}>Release & Waiver</h2>
 
@@ -538,7 +635,7 @@ export default function RegistrationForm({ program }: { program: Program }) {
           </div>
 
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={() => setStep((isParty || hasTimeSlots) ? 2 : 1)} style={{ flex: 1, backgroundColor: '#f0f0f0', color: '#333', padding: '14px', borderRadius: '8px', fontWeight: '700', fontSize: '15px', border: 'none', cursor: 'pointer' }}>Back</button>
+            <button onClick={() => setStep((isParty || hasTimeSlots || hasSessionGroups) ? 2 : 1)} style={{ flex: 1, backgroundColor: '#f0f0f0', color: '#333', padding: '14px', borderRadius: '8px', fontWeight: '700', fontSize: '15px', border: 'none', cursor: 'pointer' }}>Back</button>
             <button
               onClick={() => {
                 if (!form.guardianSignature) { setError('Please sign the waiver.'); return; }
@@ -554,7 +651,7 @@ export default function RegistrationForm({ program }: { program: Program }) {
                 if (!isValidEmail(form.waiverEmail)) { setError('Please enter a valid email address.'); return; }
                 if (!form.agreeToWaiver) { setError('You must agree to the waiver to continue.'); return; }
                 setError('');
-                setStep((isParty || hasTimeSlots) ? 4 : 3);
+                setStep((isParty || hasTimeSlots || hasSessionGroups) ? 4 : 3);
               }}
               style={{ flex: 2, backgroundColor: '#29ABE2', color: 'white', padding: '14px', borderRadius: '8px', fontWeight: '700', fontSize: '15px', border: 'none', cursor: 'pointer' }}
             >
@@ -565,8 +662,8 @@ export default function RegistrationForm({ program }: { program: Program }) {
         </div>
       )}
 
-      {/* STEP 3 (non-party/no-slots) or STEP 4 (party or time slots) — Terms & Child Info */}
-      {((step === 3 && !isParty && !hasTimeSlots) || (step === 4 && (isParty || hasTimeSlots))) && (
+      {/* STEP 3 (non-party/no-slots/no-groups) or STEP 4 (party, time slots, or session groups) — Terms & Child Info */}
+      {((step === 3 && !isParty && !hasTimeSlots && !hasSessionGroups) || (step === 4 && (isParty || hasTimeSlots || hasSessionGroups))) && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <h2 style={{ fontSize: '17px', fontWeight: '700' }}>Terms & Conditions</h2>
 
@@ -620,7 +717,7 @@ export default function RegistrationForm({ program }: { program: Program }) {
           </div>
 
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={() => setStep((isParty || hasTimeSlots) ? 3 : 2)} style={{ flex: 1, backgroundColor: '#f0f0f0', color: '#333', padding: '14px', borderRadius: '8px', fontWeight: '700', fontSize: '15px', border: 'none', cursor: 'pointer' }}>Back</button>
+            <button onClick={() => setStep((isParty || hasTimeSlots || hasSessionGroups) ? 3 : 2)} style={{ flex: 1, backgroundColor: '#f0f0f0', color: '#333', padding: '14px', borderRadius: '8px', fontWeight: '700', fontSize: '15px', border: 'none', cursor: 'pointer' }}>Back</button>
             <button
               onClick={() => {
                 const effectiveChildName = `${form.playerFirstName} ${form.playerLastName}`.trim() || form.childName;
@@ -634,7 +731,7 @@ export default function RegistrationForm({ program }: { program: Program }) {
               disabled={loading}
               style={{ flex: 2, backgroundColor: loading ? '#aaa' : '#29ABE2', color: 'white', padding: '14px', borderRadius: '8px', fontWeight: '700', fontSize: '15px', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}
             >
-              {loading ? 'Processing...' : `Continue to Payment — $${program.deposit ? program.deposit.toFixed(2) : program.price.toFixed(2)}`}
+              {loading ? 'Processing...' : `Continue to Payment — $${dynamicPrice.toFixed(2)}`}
             </button>
           </div>
           {error && <p style={{ color: 'red', fontSize: '13px' }}>{error}</p>}
