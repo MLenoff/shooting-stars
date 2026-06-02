@@ -58,7 +58,7 @@ function ProgramCard({ program }: { program: Awaited<ReturnType<typeof getProgra
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <span style={{ fontSize: '24px', fontWeight: '900', color: '#1a1a1a' }}>
-              {program.price === 0 ? 'Contact us' : `$${program.price.toFixed(2)}`}
+              {program.sessionGroups?.length ? `$${program.pricePerSession}/week` : program.price === 0 ? 'Contact us' : `$${program.price.toFixed(2)}`}
             </span>
             {program.price > 0 && <p style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>Price includes 4% service charge</p>}
             {program.spotsAvailable && <p style={{ fontSize: '12px', color: '#e05c2a', fontWeight: '600', marginTop: '2px' }}>{program.spotsAvailable} spots left</p>}

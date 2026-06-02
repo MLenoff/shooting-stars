@@ -182,6 +182,13 @@ export default function RegistrationForm({ program }: { program: Program }) {
     el.style.display = selectedSessions.length > 0 ? 'none' : '';
   }, [selectedSessions]);
 
+  // Auto-select the group when there's only one (e.g. summer camp)
+  useEffect(() => {
+    if (program.sessionGroups?.length === 1 && !selectedGroup) {
+      setSelectedGroup(program.sessionGroups[0].label);
+    }
+  }, [program.sessionGroups]);
+
   const isKidsProgram = !program.adultOnly;
   const isParty = program.type === 'party';
   const hasTimeSlots = !!(program.timeSlots?.length);
@@ -321,35 +328,40 @@ export default function RegistrationForm({ program }: { program: Program }) {
         </div>
       )}
 
-      {/* STEP 2 — Session Group Picker (summer training academy) */}
+      {/* STEP 2 — Session Group Picker (summer training / summer camp) */}
       {step === 2 && hasSessionGroups && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <h2 style={{ fontSize: '17px', fontWeight: '700' }}>Select Your Group & Sessions</h2>
+          <h2 style={{ fontSize: '17px', fontWeight: '700' }}>
+            {program.sessionGroups?.length === 1 ? 'Select Your Weeks' : 'Select Your Group & Sessions'}
+          </h2>
 
-          <div>
-            <p style={{ fontSize: '14px', fontWeight: '600', color: '#333', marginBottom: '12px' }}>Choose your age group <span style={{ color: 'red' }}>*</span></p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {program.sessionGroups?.map(group => (
-                <button
-                  key={group.label}
-                  onClick={() => {
-                    setSelectedGroup(group.label);
-                    setSelectedSessions([...group.sessions]);
-                  }}
-                  style={{
-                    padding: '14px 18px', borderRadius: '10px', textAlign: 'left',
-                    border: selectedGroup === group.label ? '2px solid #29ABE2' : '2px solid #e0e0e0',
-                    backgroundColor: selectedGroup === group.label ? '#e8f7fd' : 'white',
-                    color: selectedGroup === group.label ? '#0093c4' : '#333',
-                    fontWeight: selectedGroup === group.label ? '700' : '500',
-                    fontSize: '15px', cursor: 'pointer',
-                  }}
-                >
-                  {group.label}
-                </button>
-              ))}
+          {/* Only show group selector when there are multiple groups */}
+          {(program.sessionGroups?.length ?? 0) > 1 && (
+            <div>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: '#333', marginBottom: '12px' }}>Choose your age group <span style={{ color: 'red' }}>*</span></p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {program.sessionGroups?.map(group => (
+                  <button
+                    key={group.label}
+                    onClick={() => {
+                      setSelectedGroup(group.label);
+                      setSelectedSessions([...group.sessions]);
+                    }}
+                    style={{
+                      padding: '14px 18px', borderRadius: '10px', textAlign: 'left',
+                      border: selectedGroup === group.label ? '2px solid #29ABE2' : '2px solid #e0e0e0',
+                      backgroundColor: selectedGroup === group.label ? '#e8f7fd' : 'white',
+                      color: selectedGroup === group.label ? '#0093c4' : '#333',
+                      fontWeight: selectedGroup === group.label ? '700' : '500',
+                      fontSize: '15px', cursor: 'pointer',
+                    }}
+                  >
+                    {group.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {selectedGroup && (() => {
             const group = program.sessionGroups?.find(g => g.label === selectedGroup);
@@ -386,7 +398,9 @@ export default function RegistrationForm({ program }: { program: Program }) {
                 </div>
 
                 <div style={{ marginTop: '12px', backgroundColor: '#e8f7fd', borderRadius: '8px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '14px', color: '#555' }}>{selectedSessions.length} of {allSessions.length} sessions selected</span>
+                  <span style={{ fontSize: '14px', color: '#555' }}>
+                    {selectedSessions.length} of {allSessions.length} {program.sessionGroups?.length === 1 ? 'weeks' : 'sessions'} selected
+                  </span>
                   <span style={{ fontSize: '16px', fontWeight: '700', color: '#0093c4' }}>${(selectedSessions.length * (program.pricePerSession || 0)).toFixed(2)}</span>
                 </div>
               </div>
