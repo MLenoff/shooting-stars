@@ -118,11 +118,43 @@ export default async function HomePage() {
         </p>
       </section>
 
+      {/* Sticky section nav */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 50, backgroundColor: 'white', borderBottom: '1px solid #e8e8e8', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+        <div style={{ maxWidth: '1140px', margin: '0 auto', padding: '0 24px', display: 'flex', gap: '4px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+          {[
+            { label: 'Youth Programs', href: '#youth', color: '#29ABE2' },
+            { label: 'Training', href: '#training', color: '#0093c4' },
+            { label: 'Adults & Rentals', href: '#adults', color: '#555' },
+            { label: 'Parties & More', href: '#parties', color: '#f57f17' },
+          ].map(({ label, href, color }) => (
+            <a
+              key={href}
+              href={href}
+              style={{
+                display: 'inline-block',
+                padding: '14px 18px',
+                fontSize: '13px',
+                fontWeight: '700',
+                color,
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+                borderBottom: `3px solid transparent`,
+                transition: 'border-color 0.15s',
+              }}
+              onMouseOver={e => (e.currentTarget.style.borderBottomColor = color)}
+              onMouseOut={e => (e.currentTarget.style.borderBottomColor = 'transparent')}
+            >
+              {label}
+            </a>
+          ))}
+        </div>
+      </div>
+
       <section style={{ maxWidth: '1140px', margin: '0 auto', padding: '56px 24px' }}>
 
         {/* Youth Programs */}
         {(youthPrograms.length > 0 || otherPrograms.length > 0 || hasSummerTraining) && (
-          <div style={sectionStyle}>
+          <div id="youth" style={sectionStyle}>
             <SectionHeader title="Youth Programs" subtitle="Classes and camps for players ages 2–12" color="#29ABE2" />
             <div style={gridStyle}>
               {[...youthPrograms, ...otherPrograms].map(program => (
@@ -164,7 +196,7 @@ export default async function HomePage() {
 
         {/* Training */}
         {(trainingPrograms.length > 0 || hasTrainingPackages) && (
-          <div style={sectionStyle}>
+          <div id="training" style={sectionStyle}>
             <SectionHeader title="Training" subtitle="Group classes and 1-on-1 sessions for all skill levels" color="#0093c4" />
             <div style={gridStyle}>
               {trainingPrograms.map(program => (
@@ -211,7 +243,7 @@ export default async function HomePage() {
 
         {/* Adults & Rentals */}
         {adultPrograms.length > 0 && (
-          <div style={sectionStyle}>
+          <div id="adults" style={sectionStyle}>
             <SectionHeader title="Adults & Rentals" subtitle="Open play and field rentals for adults 18 and up" color="#555" />
             <div style={gridStyle}>
               {adultPrograms.map(program => (
@@ -223,7 +255,7 @@ export default async function HomePage() {
 
         {/* Parties & More */}
         {(hasParties || apparel) && (
-          <div style={sectionStyle}>
+          <div id="parties" style={sectionStyle}>
             <SectionHeader title="Parties & More" subtitle="Birthday parties and official Shooting Stars gear" color="#f57f17" />
             <div style={gridStyle}>
 
