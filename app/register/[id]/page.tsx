@@ -28,7 +28,7 @@ export default async function RegisterPage({ params }: { params: Promise<{ id: s
             </div>
             <div style={{ textAlign: 'right', marginLeft: '16px', flexShrink: 0 }}>
               <p style={{ fontSize: '22px', fontWeight: '800', color: '#1a1a1a' }}>
-                {program.price === 0 ? 'TBD' : `$${program.price.toFixed(2)}`}
+                {program.pricePerSession ? `$${program.pricePerSession}/session` : program.price === 0 ? 'TBD' : `$${program.price.toFixed(2)}`}
               </p>
               {program.deposit && program.price !== program.deposit && (
                 <p style={{ fontSize: '12px', color: '#777' }}>${program.deposit.toFixed(2)} deposit</p>
