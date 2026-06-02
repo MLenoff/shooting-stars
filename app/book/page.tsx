@@ -151,7 +151,7 @@ export default async function HomePage() {
                     </ul>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div>
-                        <span style={{ fontSize: '24px', fontWeight: '900', color: '#1a1a1a' }}>$20/session</span>
+                        <span style={{ fontSize: '24px', fontWeight: '900', color: '#1a1a1a' }}>$360.00</span>
                         <p style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>Price includes 4% service charge</p>
                       </div>
                       <Link href="/register/summer-training-academy" style={{ backgroundColor: '#29ABE2', color: 'white', padding: '12px 24px', borderRadius: '10px', fontWeight: '700', fontSize: '14px', textDecoration: 'none' }}>
