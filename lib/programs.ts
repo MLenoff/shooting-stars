@@ -83,7 +83,7 @@ export const programs: Program[] = [
     id: 'summer-training-academy',
     name: 'Shooting Stars Academy Summer Training',
     type: 'group',
-    description: 'Intensive summer training program for youth players. Age groups use a September 1 cutoff. U6 & Under (U5, U6): Tuesday & Thursday 5:30PM–6:30PM. U7–U9 (U7, U8, U9): Monday & Wednesday 6:30PM–7:30PM. U10 & Up (U10, U11, U12): Monday & Wednesday 6:30PM–7:30PM. Not sure which group your child is in? We\'ll confirm when we call you after registration.',
+    description: 'Intensive summer training for players ages 4–12. Three age groups train on different days — you\'ll select your group and sessions at registration. Price is $20 per session.',
     dates: 'June 8 - August 6, 2026',
     times: 'U6 & Under: Tue & Thu 5:30–6:30PM | U7–U9: Mon & Wed 6:30–7:30PM | U10 & Up: Mon & Wed 6:30–7:30PM',
     price: 360,
