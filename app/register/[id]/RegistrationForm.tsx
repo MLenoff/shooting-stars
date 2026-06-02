@@ -176,6 +176,12 @@ export default function RegistrationForm({ program }: { program: Program }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    const el = document.getElementById('static-program-price');
+    if (!el) return;
+    el.style.display = selectedSessions.length > 0 ? 'none' : '';
+  }, [selectedSessions]);
+
   const isKidsProgram = !program.adultOnly;
   const isParty = program.type === 'party';
   const hasTimeSlots = !!(program.timeSlots?.length);

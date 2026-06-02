@@ -27,8 +27,8 @@ export default async function RegisterPage({ params }: { params: Promise<{ id: s
               {program.ageGroup && <p style={{ fontSize: '13px', color: '#29ABE2', fontWeight: '600', marginTop: '4px' }}>{program.ageGroup}</p>}
             </div>
             <div style={{ textAlign: 'right', marginLeft: '16px', flexShrink: 0 }}>
-              <p style={{ fontSize: '22px', fontWeight: '800', color: '#1a1a1a' }}>
-                {program.pricePerSession ? `$${program.pricePerSession}/session` : program.price === 0 ? 'TBD' : `$${program.price.toFixed(2)}`}
+              <p id="static-program-price" style={{ fontSize: '22px', fontWeight: '800', color: '#1a1a1a' }}>
+                {program.price === 0 ? 'TBD' : `$${program.price.toFixed(2)}`}
               </p>
               {program.deposit && program.price !== program.deposit && (
                 <p style={{ fontSize: '12px', color: '#777' }}>${program.deposit.toFixed(2)} deposit</p>
