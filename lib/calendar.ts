@@ -142,6 +142,9 @@ export async function getBookedSlots(date: string): Promise<string[]> {
   };
 
   for (const event of events) {
+    // Skip employee schedule events
+    if (event.summary?.toLowerCase().startsWith('employee')) continue;
+
     // Bookings made through our system have "Slot: X" in the description
     const slotStr = event.description?.match(/Slot: (.+)/)?.[1];
     if (slotStr) {
