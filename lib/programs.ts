@@ -84,7 +84,7 @@ export const programs: Program[] = [
     id: 'summer-camp-2026',
     name: 'Summer Camp 2026',
     type: 'group',
-    description: 'A full-day summer camp experience combining soccer training with fun activities. Register for one week or as many as you like.',
+    description: 'A full-day summer camp experience combining soccer training with fun activities. Register for one week or as many as you like. One-time $50 registration fee applies.',
     dates: 'June 8, 2026 - August 7, 2026',
     times: '9:00AM - 4:30PM',
     price: 360,

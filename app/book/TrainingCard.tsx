@@ -29,7 +29,7 @@ export default function TrainingCard({ title, subtitle, tag, flyer, days, fromPr
     <div style={{ backgroundColor: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.07)', display: 'flex', flexDirection: 'column' }}>
       {/* Flyer */}
       <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => setExpanded(e => !e)}>
-        <img src={flyer} alt={title} style={{ width: '100%', height: '320px', objectFit: 'contain', display: 'block', backgroundColor: '#f7f8fa' }} />
+        <img src={flyer} alt={title} style={{ width: '100%', height: '320px', objectFit: 'cover', objectPosition: 'top', display: 'block', backgroundColor: '#f7f8fa' }} />
       </div>
 
       {/* Header */}

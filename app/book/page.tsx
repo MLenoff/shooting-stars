@@ -127,16 +127,15 @@ export default async function HomePage() {
                 </div>
                 <div style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <p style={{ fontSize: '14px', color: '#666', lineHeight: '1.6' }}>
-                    Celebrate your birthday at Shooting Stars! Choose Silver (2 hrs) or Gold (3 hrs). More than 20 kids? $12 per child.
+                    Celebrate your birthday at Shooting Stars! Choose Silver (2 hrs) or Gold (3 hrs).
                   </p>
                   <ul style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <li style={{ fontSize: '13px', color: '#333', fontWeight: '600' }}>Silver Package (2 hrs) — from $485</li>
-                    <li style={{ fontSize: '13px', color: '#333', fontWeight: '600' }}>Gold Package (3 hrs) — from $585</li>
+                    <li style={{ fontSize: '13px', color: '#333', fontWeight: '600' }}>Silver Package (2 hrs) — $485</li>
+                    <li style={{ fontSize: '13px', color: '#333', fontWeight: '600' }}>Gold Package (3 hrs) — $585</li>
                   </ul>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
-                      <span style={{ fontSize: '20px', fontWeight: '900', color: '#1a1a1a' }}>$156.50 deposit</span>
-                      <p style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>to secure your date · Total from $485</p>
+                      <span style={{ fontSize: '20px', fontWeight: '900', color: '#1a1a1a' }}>$156.50 to secure your date</span>
                     </div>
                     <Link href="/register/birthday-parties" style={{ backgroundColor: '#f57f17', color: 'white', padding: '12px 24px', borderRadius: '10px', fontWeight: '700', fontSize: '14px', textDecoration: 'none' }}>
                       View Packages
@@ -174,7 +173,7 @@ export default async function HomePage() {
                   subtitle="Single · 10-Pack"
                   tag="1-on-1"
                   flyer="/individual.avif"
-                  days="Tuesday, Thursday & Friday"
+                  days="Monday–Friday"
                   fromPrice="$78.00 per session"
                   options={[
                     { id: 'individual-training', name: '1-on-1 Individual Training', description: 'Single session with a Shooting Stars trainer.', price: 78.00, perSession: '$78.00 / session' },
