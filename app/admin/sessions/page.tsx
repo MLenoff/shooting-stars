@@ -32,6 +32,7 @@ export default function AdminSessionsPage() {
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newProgram, setNewProgram] = useState('');
+  const [newPlayerDob, setNewPlayerDob] = useState('');
   const [newSessions, setNewSessions] = useState('10');
   const [newPlayerName, setNewPlayerName] = useState('');
   const [newPlayerAge, setNewPlayerAge] = useState('');
@@ -79,12 +80,12 @@ export default function AdminSessionsPage() {
     await fetch('/api/admin/sessions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newName, email: newEmail, program_name: newProgram, sessions_total: newSessions, player_name: newPlayerName, player_age: newPlayerAge, player_level: newPlayerLevel, phone: newPhone }),
+      body: JSON.stringify({ name: newName, email: newEmail, program_name: newProgram, sessions_total: newSessions, player_name: newPlayerName, player_age: newPlayerAge, player_dob: newPlayerDob, player_level: newPlayerLevel, phone: newPhone }),
     });
     setMsg(`${newName} added. A login invite was sent to ${newEmail}.`);
     setShowAdd(false);
     setNewName(''); setNewEmail(''); setNewProgram(''); setNewSessions('10');
-    setNewPlayerName(''); setNewPlayerAge(''); setNewPlayerLevel(''); setNewPhone('');
+    setNewPlayerName(''); setNewPlayerAge(''); setNewPlayerDob(''); setNewPlayerLevel(''); setNewPhone('');
     loadPacks();
   }
 
@@ -152,6 +153,10 @@ export default function AdminSessionsPage() {
               <p style={{ fontSize: '13px', fontWeight: '700', color: '#777', margin: '8px 0 4px' }}>PLAYER</p>
               <input placeholder="Player full name" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }} />
               <input placeholder="Player age" value={newPlayerAge} onChange={e => setNewPlayerAge(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }} />
+              <div>
+                <label style={{ fontSize: '12px', color: '#777', display: 'block', marginBottom: '4px' }}>Date of birth</label>
+                <input type="date" value={newPlayerDob} onChange={e => setNewPlayerDob(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }} />
+              </div>
               <select value={newPlayerLevel} onChange={e => setNewPlayerLevel(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px', color: newPlayerLevel ? '#1a1a1a' : '#999' }}>
                 <option value="">Player level</option>
                 <option>Beginner</option>
@@ -159,7 +164,13 @@ export default function AdminSessionsPage() {
                 <option>Advanced</option>
               </select>
               <p style={{ fontSize: '13px', fontWeight: '700', color: '#777', margin: '8px 0 4px' }}>PROGRAM</p>
-              <input placeholder="Program name *" value={newProgram} onChange={e => setNewProgram(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }} />
+              <select value={newProgram} onChange={e => setNewProgram(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px', color: newProgram ? '#1a1a1a' : '#999' }}>
+                <option value="">Select program *</option>
+                <option>1-on-1 Training — 10 Session Package</option>
+                <option>1-on-1 Training — 20 Session Package</option>
+                <option>Group Training — 10 Session Package</option>
+                <option>Group Training — 20 Session Package</option>
+              </select>
               <input type="number" placeholder="Number of sessions *" value={newSessions} onChange={e => setNewSessions(e.target.value)} style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }} />
               <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
                 <button onClick={addCashCustomer} style={{ backgroundColor: '#1a1a1a', color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>Save & Send Invite</button>
