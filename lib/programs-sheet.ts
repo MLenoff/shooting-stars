@@ -27,6 +27,7 @@ export async function getProgramsFromSheet(): Promise<Program[]> {
           ...(ov.description != null ? { description: ov.description as string } : {}),
           ...(ov.age_group != null ? { ageGroup: ov.age_group as string } : {}),
           ...(ov.active != null ? { active: ov.active as boolean } : {}),
+          ...(ov.flyer != null ? { flyer: ov.flyer as string } : {}),
         };
       })
       .filter(p => p.active);

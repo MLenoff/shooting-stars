@@ -25,6 +25,7 @@ interface ProgramRow {
   description: string;
   age_group: string;
   active: boolean;
+  flyer: string;
 }
 
 const ADMIN_PASSWORD = 'ShootingStars2026!';
@@ -144,7 +145,7 @@ export default function AdminSessionsPage() {
     await fetch('/api/admin/programs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: prog.id, name: prog.name, price: prog.price, dates: prog.dates, times: prog.times, description: prog.description, age_group: prog.age_group, active: !prog.active }),
+      body: JSON.stringify({ id: prog.id, name: prog.name, price: prog.price, dates: prog.dates, times: prog.times, description: prog.description, age_group: prog.age_group, active: !prog.active, flyer: prog.flyer }),
     });
     setProgMsg(`${prog.name} ${prog.active ? 'hidden' : 'shown'}.`);
     loadPrograms();
@@ -361,7 +362,7 @@ export default function AdminSessionsPage() {
                           {prog.active ? 'Visible' : 'Hidden'}
                         </button>
                         <button
-                          onClick={() => { setEditProgId(editProgId === prog.id ? null : prog.id); setEditProg({ name: prog.name, price: prog.price, dates: prog.dates, times: prog.times, description: prog.description, age_group: prog.age_group, active: prog.active }); }}
+                          onClick={() => { setEditProgId(editProgId === prog.id ? null : prog.id); setEditProg({ name: prog.name, price: prog.price, dates: prog.dates, times: prog.times, description: prog.description, age_group: prog.age_group, active: prog.active, flyer: prog.flyer }); }}
                           style={{ padding: '7px 14px', backgroundColor: '#f5f0ff', color: '#7c3aed', borderRadius: '8px', border: 'none', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
                         >
                           Edit
@@ -396,6 +397,13 @@ export default function AdminSessionsPage() {
                         <div>
                           <label style={{ fontSize: '11px', fontWeight: '700', color: '#999', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Description</label>
                           <textarea value={editProg.description ?? ''} onChange={e => setEditProg(p => ({ ...p, description: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '11px', fontWeight: '700', color: '#999', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Flyer Image URL</label>
+                          <input value={editProg.flyer ?? ''} onChange={e => setEditProg(p => ({ ...p, flyer: e.target.value }))} style={inputStyle} placeholder="Paste an image link (Google Drive, Dropbox, etc.)" />
+                          {editProg.flyer && (
+                            <img src={editProg.flyer} alt="Flyer preview" style={{ marginTop: '8px', maxHeight: '120px', borderRadius: '6px', objectFit: 'cover' }} onError={e => (e.currentTarget.style.display = 'none')} />
+                          )}
                         </div>
                         <div style={{ display: 'flex', gap: '10px' }}>
                           <button onClick={() => saveProgram(prog.id)} style={{ padding: '9px 20px', backgroundColor: '#29ABE2', color: 'white', borderRadius: '8px', border: 'none', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>Save Changes</button>

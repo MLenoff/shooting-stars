@@ -17,6 +17,7 @@ export async function GET() {
       description: (ov?.description as string) ?? p.description,
       age_group: (ov?.age_group as string) ?? p.ageGroup ?? '',
       active: (ov?.active as boolean) ?? p.active,
+      flyer: (ov?.flyer as string) ?? p.flyer ?? '',
     };
   });
 
@@ -24,12 +25,12 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { id, name, price, dates, times, description, age_group, active } = await req.json();
+  const { id, name, price, dates, times, description, age_group, active, flyer } = await req.json();
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
   const { error } = await supabaseAdmin
     .from('program_settings')
-    .upsert({ id, name, price, dates, times, description, age_group, active, updated_at: new Date().toISOString() });
+    .upsert({ id, name, price, dates, times, description, age_group, active, flyer, updated_at: new Date().toISOString() });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
