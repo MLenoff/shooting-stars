@@ -8,7 +8,7 @@ export default function FlyerImage({ src, alt }: { src: string; alt: string }) {
   return (
     <>
       <div style={{ position: 'relative', cursor: 'zoom-in' }} onClick={() => setOpen(true)}>
-        <img src={src} alt={alt} style={{ width: '100%', height: '200px', objectFit: 'cover', display: 'block' }} />
+        <img src={src} alt={alt} style={{ width: '100%', height: '420px', objectFit: 'contain', display: 'block', backgroundColor: '#f7f8fa' }} />
         <div style={{
           position: 'absolute',
           bottom: '8px',

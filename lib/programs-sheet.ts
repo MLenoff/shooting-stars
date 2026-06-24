@@ -86,6 +86,11 @@ export async function getProgramsFromSheet(): Promise<Program[]> {
         ...p,
         sessionGroups: lp?.sessionGroups,
         pricePerSession: lp?.pricePerSession,
+        // Fall back to local for fields the sheet may not define
+        timeSlots: p.timeSlots ?? lp?.timeSlots,
+        availableDays: p.availableDays ?? lp?.availableDays,
+        // Use local price when sheet price is 0 or missing
+        price: p.price || lp?.price || 0,
       };
     });
     const sheetIds = new Set(sheetPrograms.map(p => p.id));

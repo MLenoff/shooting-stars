@@ -1,22 +1,25 @@
 import { getProgramsFromSheet } from '@/lib/programs-sheet';
 import Link from 'next/link';
 
-export default async function TrainingPackagesPage() {
+export default async function GroupTrainingPackagesPage() {
   const programs = await getProgramsFromSheet();
-  const singleSession = programs.find(p => p.id === 'individual-training');
+  const dropIn = programs.find(p => p.id === 'elite-group-training');
   const packages = [
-    singleSession,
-    programs.find(p => p.id === 'training-10pack'),
+    dropIn,
+    programs.find(p => p.id === 'group-training-10pack'),
+    programs.find(p => p.id === 'group-training-20pack'),
   ].filter(Boolean);
 
   const perSession: Record<string, string> = {
-    'individual-training': '$78.00 / session',
-    'training-10pack': '$72.80 / session',
+    'elite-group-training': '$46.80 / session',
+    'group-training-10pack': '$41.60 / session',
+    'group-training-20pack': '$36.40 / session',
   };
 
   const highlight: Record<string, string | undefined> = {
-    'individual-training': undefined,
-    'training-10pack': 'Best Value',
+    'elite-group-training': undefined,
+    'group-training-10pack': 'Most Popular',
+    'group-training-20pack': 'Best Value',
   };
 
   return (
@@ -32,12 +35,12 @@ export default async function TrainingPackagesPage() {
         <Link href="/book" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', fontWeight: '600', display: 'inline-block', marginBottom: '20px', textDecoration: 'none' }}>
           ← Back to Programs
         </Link>
-        <p style={{ color: '#29ABE2', fontSize: '13px', fontWeight: '700', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '12px' }}>Individual Training</p>
+        <p style={{ color: '#29ABE2', fontSize: '13px', fontWeight: '700', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '12px' }}>Group Training</p>
         <h1 style={{ color: 'white', fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: '900', marginBottom: '16px', lineHeight: '1.1' }}>
           Choose Your Package
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '15px', maxWidth: '480px', margin: '0 auto' }}>
-          1-on-1 sessions with a Shooting Stars trainer. Must cancel 24 hours in advance or forfeit full payment. Indoor shoes only.
+          High-level group training sessions. Must cancel 24 hours in advance or forfeit session.
         </p>
       </section>
 
@@ -46,8 +49,6 @@ export default async function TrainingPackagesPage() {
           {packages.map(pkg => {
             if (!pkg) return null;
             const badge = highlight[pkg.id];
-            const isPopular = badge === 'Most Popular';
-            const isBest = badge === 'Best Value';
             return (
               <div key={pkg.id} style={{
                 backgroundColor: 'white',

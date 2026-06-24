@@ -1,10 +1,12 @@
 'use client';
 
 const links = [
-  { label: 'Youth Programs', href: '#youth', color: '#29ABE2', bg: '#e8f7fd' },
+  { label: 'Birthday Parties', href: '#parties', color: '#f57f17', bg: '#fff3e0' },
   { label: 'Training', href: '#training', color: '#0093c4', bg: '#e0f3fa' },
-  { label: 'Adults & Rentals', href: '#adults', color: '#444', bg: '#f0f0f0' },
-  { label: 'Parties & More', href: '#parties', color: '#f57f17', bg: '#fff3e0' },
+  { label: 'Youth Programs', href: '#youth', color: '#29ABE2', bg: '#e8f7fd' },
+  { label: 'Academy', href: '#academy', color: '#29ABE2', bg: '#e8f7fd' },
+  { label: 'Field Rentals', href: '#rentals', color: '#444', bg: '#f0f0f0' },
+  { label: 'Apparel', href: '#apparel', color: '#1a1a2e', bg: '#ebebf5' },
 ];
 
 export default function SectionNav() {
