@@ -140,7 +140,7 @@ export const programs: Program[] = [
     id: 'adult-open-play',
     name: 'Adult Open Play / Team Rentals',
     type: 'rental',
-    description: 'Field rental for adult teams and players. $104/hour (includes up to 10 players). $10.40 per additional player after 10. Must be 18 or older.',
+    description: 'Field rental for adult teams and players. $100/hour for up to 10 players. $10 per additional player. Must be 18 or older.',
     dates: 'Mon, Tue, Wed & Thu',
     times: 'Mon/Tue/Thu: 7:30PM–8:30PM or 8:30PM–9:30PM | Wed: 9:30PM–10:30PM',
     price: 104.00,

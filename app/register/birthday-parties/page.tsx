@@ -26,7 +26,7 @@ function PolicyBox({ accentColor }: { accentColor: string }) {
       <ul style={{ margin: 0, padding: '0 0 0 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <li style={{ fontSize: '13px', color: '#555', lineHeight: '1.5' }}>A deposit of <strong>$150.00</strong> is required to secure your date. Remaining balance is due at the time of your event.</li>
         <li style={{ fontSize: '13px', color: '#555', lineHeight: '1.5' }}>A <strong>20% gratuity</strong> will be added for party staff.</li>
-        <li style={{ fontSize: '13px', color: '#555', lineHeight: '1.5' }}>More than 20 kids? <strong>$12 per additional child.</strong></li>
+        <li style={{ fontSize: '13px', color: '#555', lineHeight: '1.5' }}>After you reach your limit of 20 kids, <strong>$12 per child will apply.</strong></li>
         <li style={{ fontSize: '13px', color: '#555', lineHeight: '1.5' }}>Packages <strong>may not be changed within 5 days</strong> of the party. Shooting Stars will not refund or exchange your deposit after that date.</li>
         <li style={{ fontSize: '13px', color: '#555', lineHeight: '1.5' }}>All requests must be made in writing.</li>
         <li style={{ fontSize: '13px', color: '#555', lineHeight: '1.5' }}>Additional plates, cups, or silverware will not be provided and must be brought by the host.</li>

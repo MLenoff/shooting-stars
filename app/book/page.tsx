@@ -84,7 +84,7 @@ const sectionStyle = { marginBottom: '64px' } as const;
 export default async function HomePage() {
   const programs = await getProgramsFromSheet();
 
-  const youthIds = ['twinkle-little-stars', 'autism-kicks', 'summer-camp-2026'];
+  const youthIds = ['twinkle-stars', 'little-stars', 'autism-kicks', 'summer-camp-2026'];
   const microSchool = programs.find(p => p.id === 'girls-only-micro-school');
   const hasTrainingPackages = programs.some(p => p.id === 'training-10pack');
   const hasGroupPackages = programs.some(p => p.id === 'group-training-10pack' || p.id === 'group-training-20pack');
