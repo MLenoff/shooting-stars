@@ -51,7 +51,7 @@ function formatDate(dateStr: string) {
   });
 }
 
-async function verifySquareOrder(orderId: string): Promise<{ ok: boolean; metadata?: Record<string, string> }> {
+async function verifySquareOrder(orderId: string): Promise<{ ok: boolean; metadata?: Record<string, string>; amountPaid?: string }> {
   const isSandbox = process.env.SQUARE_ENVIRONMENT === 'sandbox';
   const squareBaseUrl = isSandbox
     ? 'https://connect.squareupsandbox.com'
@@ -66,9 +66,12 @@ async function verifySquareOrder(orderId: string): Promise<{ ok: boolean; metada
   if (!res.ok) return { ok: false };
   const data = await res.json();
   const state = data.order?.state;
+  const cents = data.order?.totalMoney?.amount;
+  const amountPaid = cents != null ? `$${(Number(cents) / 100).toFixed(2)}` : undefined;
   return {
     ok: state === 'COMPLETED' || state === 'OPEN',
     metadata: data.order?.metadata || {},
+    amountPaid,
   };
 }
 
@@ -81,13 +84,15 @@ export async function POST(req: NextRequest) {
 
   // Verify payment with Square before processing anything
   let orderMetadata: Record<string, string> = {};
+  let amountPaid: string | undefined;
   if (orderId) {
-    const { ok: paid, metadata } = await verifySquareOrder(orderId);
+    const { ok: paid, metadata, amountPaid: amount } = await verifySquareOrder(orderId);
     if (!paid) {
       console.error('create-booking: order not completed', orderId);
       return NextResponse.json({ ok: false, error: 'Payment not verified' }, { status: 400 });
     }
     orderMetadata = metadata || {};
+    amountPaid = amount;
   }
 
   // If this is a session pack, create a Supabase record + auth account
@@ -152,6 +157,7 @@ export async function POST(req: NextRequest) {
             <div style="background: #f7f8fa; padding: 20px; border-radius: 8px; margin: 24px 0;">
               <p style="margin: 0 0 8px;"><strong>Program:</strong> ${programName}</p>
               ${dateSlotLine}
+              ${amountPaid ? `<p style="margin: 8px 0 0;"><strong>Amount paid:</strong> ${amountPaid}</p>` : ''}
             </div>
             ${packLine}
             <p style="color: #555;">If you have any questions, call us at <strong>954-900-3292</strong> or reply to this email.</p>
@@ -175,6 +181,7 @@ export async function POST(req: NextRequest) {
           <p><strong>Program:</strong> ${programName}</p>
           ${hasDateSlot ? `<p><strong>Date:</strong> ${formatDate(date)}</p><p><strong>Time:</strong> ${slot}</p>` : ''}
           ${isPack ? `<p><strong>Pack:</strong> ${sessionsTotal} sessions</p>` : ''}
+          ${amountPaid ? `<p><strong>Amount paid:</strong> ${amountPaid}</p>` : ''}
           <hr style="margin: 16px 0;" />
           <p><strong>Parent/Guardian:</strong> ${customerName}</p>
           ${m.phone ? `<p><strong>Phone:</strong> ${m.phone}</p>` : ''}
