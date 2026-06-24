@@ -3,6 +3,34 @@
 import { useState, useEffect } from 'react';
 import { Program } from '@/lib/programs';
 
+// Parse a time string like "6:30PM" or "6:30PM - 8:30PM (Fri only)" into minutes from midnight
+function parseToMinutes(timeStr: string): number {
+  const match = timeStr.match(/(\d+):(\d+)(AM|PM)/i);
+  if (!match) return -1;
+  let h = parseInt(match[1]);
+  const m = parseInt(match[2]);
+  const ap = match[3].toUpperCase();
+  if (ap === 'PM' && h !== 12) h += 12;
+  if (ap === 'AM' && h === 12) h = 0;
+  return h * 60 + m;
+}
+
+// Returns true if a calendar event (eventStr like "6:00PM - 8:00PM") overlaps with a slot (slotStr like "6:30PM - 8:30PM (Fri only)")
+// If minDuration/maxDuration are set, only considers events within that duration range (in minutes)
+function overlaps(slotStr: string, eventStr: string, minDuration = 0, maxDuration = Infinity): boolean {
+  const slotParts = slotStr.split(' - ');
+  const eventParts = eventStr.split(' - ');
+  if (slotParts.length < 2 || eventParts.length < 2) return false;
+  const slotStart = parseToMinutes(slotParts[0]);
+  const slotEnd = parseToMinutes(slotParts[1]);
+  const eventStart = parseToMinutes(eventParts[0]);
+  const eventEnd = parseToMinutes(eventParts[1]);
+  if (slotStart < 0 || slotEnd < 0 || eventStart < 0 || eventEnd < 0) return false;
+  const eventDuration = eventEnd - eventStart;
+  if (eventDuration < minDuration || eventDuration > maxDuration) return false;
+  return eventStart < slotEnd && eventEnd > slotStart;
+}
+
 interface FormData {
   firstName: string;
   lastName: string;
@@ -33,6 +61,11 @@ interface FormData {
   childDob: string;
   accommodations: string;
   shirtSize: string;
+  playerAge: string;
+  playerLevel: string;
+  needsShirt: boolean;
+  shirtSizeAddon: string;
+  playerCount: number;
 }
 
 const initialForm: FormData = {
@@ -40,7 +73,7 @@ const initialForm: FormData = {
   playerFirstName: '', playerLastName: '', playerDob: '', address: '', city: '', state: '', zip: '',
   waiverPhone: '', waiverEmail: '', waiverDate: new Date().toISOString().substring(0, 10), agreeToWaiver: false,
   isUnder18: false, minorName: '', guardianSignature: '', guardianPrintName: '', guardianDate: '',
-  agreeToTerms: false, childName: '', childDob: '', accommodations: '', shirtSize: '',
+  agreeToTerms: false, childName: '', childDob: '', accommodations: '', shirtSize: '', playerAge: '', playerLevel: '', needsShirt: false, shirtSizeAddon: '', playerCount: 1,
 };
 
 function formatPhone(value: string): string {
@@ -70,7 +103,7 @@ function isValidZip(zip: string): boolean {
 function DatePicker({ program, onSelect }: { program: Program; onSelect: (date: string) => void }) {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
-  const [bookedDates, setBookedDates] = useState<string[]>([]);
+  const [slotsByDate, setSlotsByDate] = useState<Record<string, string[]>>({});
   const [selected, setSelected] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -78,12 +111,12 @@ function DatePicker({ program, onSelect }: { program: Program; onSelect: (date: 
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/availability?programId=${program.id}&month=${monthKey}`)
+    fetch(`/api/availability?month=${monthKey}`)
       .then(r => r.json())
-      .then(d => setBookedDates(d.bookedDates || []))
-      .catch(() => setBookedDates([]))
+      .then(d => setSlotsByDate(d.slotsByDate || {}))
+      .catch(() => setSlotsByDate({}))
       .finally(() => setLoading(false));
-  }, [monthKey, program.id]);
+  }, [monthKey]);
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
@@ -93,12 +126,42 @@ function DatePicker({ program, onSelect }: { program: Program; onSelect: (date: 
   };
   const availableDayNums = (program.availableDays || []).map(d => dayNumMap[d]);
 
+  function getSlotsForDayOfWeek(dayOfWeek: number): string[] {
+    const slots = program.timeSlots || [];
+    if (program.id === 'birthday-silver' || program.id === 'birthday-gold') {
+      if (dayOfWeek === 5) return slots.filter(s => s.startsWith('6:30PM'));
+      return slots.filter(s => !s.startsWith('6:30PM'));
+    }
+    if (['individual-training', 'training-10pack', 'training-20pack'].includes(program.id)) {
+      if (dayOfWeek === 2 || dayOfWeek === 4) return slots.filter(s => s.startsWith('4:30'));
+      return slots;
+    }
+    if (program.id === 'elite-group-training') {
+      if (dayOfWeek !== 5) return slots.filter(s => s.startsWith('4:30'));
+      return slots;
+    }
+    return slots;
+  }
+
   function isAvailable(day: number) {
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-    if (date < today) return false;
+    if (date <= today) return false;
     if (!availableDayNums.includes(date.getDay())) return false;
-    const dateStr = date.toISOString().substring(0, 10);
-    return !bookedDates.includes(dateStr);
+    const dateStr = getDateStr(day);
+
+    if (!program.timeSlots?.length) {
+      // No time slots — date is available if no events exist on it
+      return !(dateStr in slotsByDate);
+    }
+
+    // Gray out date only if ALL available slots for that day are already blocked by calendar events
+    const daySlots = getSlotsForDayOfWeek(date.getDay());
+    if (daySlots.length === 0) return false;
+    const eventsOnDate = slotsByDate[dateStr] || [];
+    // For birthday parties, only consider events 90–210 min long (ignores all-day staff/schedule events)
+    const isParty = program.id === 'birthday-silver' || program.id === 'birthday-gold';
+    const [minDur, maxDur] = isParty ? [90, 210] : [0, Infinity];
+    return !daySlots.every(slot => eventsOnDate.some(event => overlaps(slot, event, minDur, maxDur)));
   }
 
   function getDateStr(day: number) {
@@ -173,14 +236,19 @@ export default function RegistrationForm({ program }: { program: Program }) {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [promoCode, setPromoCode] = useState('');
+  const PROMO_CODE = 'TEST2026';
 
   useEffect(() => {
-    const el = document.getElementById('static-program-price');
-    if (!el) return;
-    el.style.display = selectedSessions.length > 0 ? 'none' : '';
-  }, [selectedSessions]);
+    if (!selectedDate || !hasTimeSlots) { setBookedSlots([]); return; }
+    fetch(`/api/availability?date=${selectedDate}`)
+      .then(r => r.json())
+      .then(d => setBookedSlots(d.bookedSlots || []))
+      .catch(() => setBookedSlots([]));
+  }, [selectedDate]);
 
   // Auto-select the group when there's only one (e.g. summer camp)
   useEffect(() => {
@@ -195,21 +263,58 @@ export default function RegistrationForm({ program }: { program: Program }) {
   const hasSessionGroups = !!(program.sessionGroups?.length);
   const totalSteps = (isParty || hasTimeSlots || hasSessionGroups) ? 4 : 3;
 
-  const dynamicPrice = hasSessionGroups && program.pricePerSession
+  const SHIRT_PRICE = 20.80;
+  const trainingIds = ['elite-group-training', 'individual-training', 'training-10pack', 'group-training-10pack', 'group-training-20pack'];
+  const showShirtAddon = trainingIds.includes(program.id);
+
+  const basePrice = hasSessionGroups && program.pricePerSession
     ? program.pricePerSession * selectedSessions.length
     : (program.deposit ?? program.price);
+  const promoApplied = promoCode.trim().toUpperCase() === PROMO_CODE;
+  const additionalPlayerCharge = program.type === 'rental' && form.playerCount > 10 ? (form.playerCount - 10) * 10.40 : 0;
+  const dynamicPrice = promoApplied ? 1.00 : basePrice + (form.needsShirt ? SHIRT_PRICE : 0) + additionalPlayerCharge;
+
+  useEffect(() => {
+    const el = document.getElementById('static-program-price');
+    if (!el) return;
+    if (selectedSessions.length > 0) {
+      el.style.display = 'none';
+    } else {
+      el.style.display = '';
+      el.textContent = `$${dynamicPrice.toFixed(2)}`;
+    }
+  }, [selectedSessions, dynamicPrice]);
 
   // For individual training: Tue & Thu only have the 4:30 slot
+  // For elite group training: Mon–Thu only have 4:30 slot; Fri has both
+  // For birthday parties: Friday only has 6:30PM slot
   const isIndividualTraining = ['individual-training', 'training-10pack', 'training-20pack'].includes(program.id);
   const availableTimeSlots = (() => {
-    if (!isIndividualTraining || !selectedDate || !program.timeSlots) return program.timeSlots || [];
-    const day = new Date(selectedDate + 'T12:00:00').getDay(); // 2=Tue, 4=Thu
-    if (day === 2 || day === 4) return program.timeSlots.filter(s => s.startsWith('4:30'));
+    if (!program.timeSlots) return [];
+    if (!selectedDate) return program.timeSlots;
+    const day = new Date(selectedDate + 'T12:00:00').getDay();
+    if (isIndividualTraining) {
+      if (day === 2 || day === 4) return program.timeSlots.filter(s => s.startsWith('4:30'));
+      return program.timeSlots;
+    }
+    if (program.id === 'elite-group-training') {
+      // Mon–Thu: only 4:30–5:25 slot; Fri: both slots
+      if (day !== 5) return program.timeSlots.filter(s => s.startsWith('4:30'));
+      return program.timeSlots;
+    }
+    if (program.id === 'birthday-gold' || program.id === 'birthday-silver') {
+      if (day === 5) {
+        // Friday: only 6:30PM slot
+        return program.timeSlots.filter(s => s.startsWith('6:30PM'));
+      }
+      // Sat & Sun: no 6:30PM slot
+      return program.timeSlots.filter(s => !s.startsWith('6:30PM'));
+    }
     return program.timeSlots;
   })();
-  const showShirtSize = ['autism-kicks', 'summer-camp-2026', 'twinkle-little-stars', 'summer-training-academy'].includes(program.id);
+  const showShirtSize = ['autism-kicks', 'twinkle-little-stars'].includes(program.id);
 
-  function update(field: keyof FormData, value: string | boolean) {
+  function update(field: keyof FormData, value: string | boolean | number) {
     setForm(prev => ({ ...prev, [field]: value }));
   }
 
@@ -220,16 +325,16 @@ export default function RegistrationForm({ program }: { program: Program }) {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ program, form, selectedDate, selectedTimeSlot, selectedSessions }),
+        body: JSON.stringify({ program, form, selectedDate, selectedTimeSlot, selectedSessions, promoApplied }),
       });
       const data = await res.json();
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       } else {
-        setError('Something went wrong. Please try again.');
+        setError(data.error || 'Something went wrong. Please try again.');
       }
-    } catch {
-      setError('Something went wrong. Please try again.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -428,30 +533,58 @@ export default function RegistrationForm({ program }: { program: Program }) {
       {/* STEP 2 — Session Picker (elite group training / programs with time slots) */}
       {step === 2 && hasTimeSlots && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <h2 style={{ fontSize: '17px', fontWeight: '700' }}>Select Your Class</h2>
+          <h2 style={{ fontSize: '17px', fontWeight: '700' }}>
+            {program.type === 'rental' ? 'Select Your Time Slot' : 'Select Your Class'}
+          </h2>
 
           <div>
             <p style={{ fontSize: '14px', fontWeight: '600', color: '#333', marginBottom: '12px' }}>Choose a time slot <span style={{ color: 'red' }}>*</span></p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {availableTimeSlots.map(slot => (
-                <button
-                  key={slot}
-                  onClick={() => setSelectedTimeSlot(slot)}
-                  style={{
-                    padding: '14px 18px',
-                    borderRadius: '10px',
-                    border: selectedTimeSlot === slot ? '2px solid #29ABE2' : '2px solid #e0e0e0',
-                    backgroundColor: selectedTimeSlot === slot ? '#e8f7fd' : 'white',
-                    color: selectedTimeSlot === slot ? '#0093c4' : '#333',
-                    fontWeight: selectedTimeSlot === slot ? '700' : '500',
-                    fontSize: '15px',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                >
-                  {slot}
-                </button>
-              ))}
+              {availableTimeSlots.map(slot => {
+                const isPartySlot = program.id === 'birthday-silver' || program.id === 'birthday-gold';
+                const [minDur, maxDur] = isPartySlot ? [90, 210] : [0, Infinity];
+                const isBooked = selectedDate ? bookedSlots.some(b => overlaps(slot, b, minDur, maxDur)) : false;
+                const slotStart = slot.split(' - ')[0].trim();
+
+                // 12-hour advance notice rule for rentals and training
+                const requires12h = ['adult-open-play', 'elite-group-training', 'individual-training'].includes(program.id);
+                let isTooSoon = false;
+                if (requires12h && selectedDate && slotStart) {
+                  const match = slotStart.match(/(\d+):(\d+)(AM|PM)/i);
+                  if (match) {
+                    let hour = parseInt(match[1]);
+                    const min = parseInt(match[2]);
+                    const ap = match[3].toUpperCase();
+                    if (ap === 'PM' && hour !== 12) hour += 12;
+                    if (ap === 'AM' && hour === 12) hour = 0;
+                    const slotDate = new Date(`${selectedDate}T${String(hour).padStart(2,'0')}:${String(min).padStart(2,'0')}:00`);
+                    isTooSoon = (slotDate.getTime() - Date.now()) < 12 * 60 * 60 * 1000;
+                  }
+                }
+
+                const isDisabled = isBooked || isTooSoon;
+                const isSelected = selectedTimeSlot === slot;
+                return (
+                  <button
+                    key={slot}
+                    disabled={isDisabled}
+                    onClick={() => setSelectedTimeSlot(slot)}
+                    style={{
+                      padding: '14px 18px',
+                      borderRadius: '10px',
+                      border: isSelected ? '2px solid #29ABE2' : '2px solid #e0e0e0',
+                      backgroundColor: isDisabled ? '#f5f5f5' : isSelected ? '#e8f7fd' : 'white',
+                      color: isDisabled ? '#bbb' : isSelected ? '#0093c4' : '#333',
+                      fontWeight: isSelected ? '700' : '500',
+                      fontSize: '15px',
+                      cursor: isDisabled ? 'not-allowed' : 'pointer',
+                      textAlign: 'left',
+                    }}
+                  >
+                    {slot}{isBooked ? ' — Booked' : isTooSoon ? ' — Less than 12 hours notice' : ''}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -556,22 +689,42 @@ export default function RegistrationForm({ program }: { program: Program }) {
             </div>
           </div>
 
-          {/* Player info */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div style={fieldStyle}>
-              <label style={labelStyle}>Player First Name <span style={{ color: 'red' }}>*</span></label>
-              <input style={inputStyle} value={form.playerFirstName} onChange={e => update('playerFirstName', e.target.value)} />
-            </div>
-            <div style={fieldStyle}>
-              <label style={labelStyle}>Player Last Name <span style={{ color: 'red' }}>*</span></label>
-              <input style={inputStyle} value={form.playerLastName} onChange={e => update('playerLastName', e.target.value)} />
-            </div>
-          </div>
+          {/* Player info — not needed for birthday parties */}
+          {!isParty && (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Player First Name <span style={{ color: 'red' }}>*</span></label>
+                  <input style={inputStyle} value={form.playerFirstName} onChange={e => update('playerFirstName', e.target.value)} />
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Player Last Name <span style={{ color: 'red' }}>*</span></label>
+                  <input style={inputStyle} value={form.playerLastName} onChange={e => update('playerLastName', e.target.value)} />
+                </div>
+              </div>
 
-          <div style={fieldStyle}>
-            <label style={labelStyle}>Player Date of Birth <span style={{ color: 'red' }}>*</span></label>
-            <input style={inputStyle} type="date" value={form.playerDob} onChange={e => update('playerDob', e.target.value)} />
-          </div>
+              <div style={fieldStyle}>
+                <label style={labelStyle}>Player Date of Birth <span style={{ color: 'red' }}>*</span></label>
+                <input style={inputStyle} type="date" value={form.playerDob} onChange={e => update('playerDob', e.target.value)} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Player Age <span style={{ color: 'red' }}>*</span></label>
+                  <input style={inputStyle} type="number" min="1" max="99" placeholder="e.g. 10" value={form.playerAge} onChange={e => update('playerAge', e.target.value)} />
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Child&apos;s Level <span style={{ color: 'red' }}>*</span></label>
+                  <select style={inputStyle} value={form.playerLevel} onChange={e => update('playerLevel', e.target.value)}>
+                    <option value="">Select level</option>
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                  </select>
+                </div>
+              </div>
+            </>
+          )}
 
           <div style={fieldStyle}>
             <label style={labelStyle}>Address <span style={{ color: 'red' }}>*</span></label>
@@ -659,8 +812,8 @@ export default function RegistrationForm({ program }: { program: Program }) {
             <button
               onClick={() => {
                 if (!form.guardianSignature) { setError('Please sign the waiver.'); return; }
-                if (!form.playerFirstName || !form.playerLastName) { setError('Please enter the player\'s first and last name.'); return; }
-                if (!form.playerDob) { setError('Please enter a valid player date of birth. Make sure the date is correct (e.g. April has only 30 days).'); return; }
+                if (!isParty && (!form.playerFirstName || !form.playerLastName)) { setError('Please enter the player\'s first and last name.'); return; }
+                if (!isParty && !form.playerDob) { setError('Please enter a valid player date of birth. Make sure the date is correct (e.g. April has only 30 days).'); return; }
                 if (!form.address) { setError('Please enter your address.'); return; }
                 if (!form.city || !form.state || !form.zip) { setError('Please enter your city, state, and ZIP.'); return; }
                 if (!isValidCity(form.city)) { setError('City must contain letters only.'); return; }
@@ -697,20 +850,24 @@ export default function RegistrationForm({ program }: { program: Program }) {
             I have read and agree to the terms above <span style={{ color: 'red' }}>*</span>
           </label>
 
-          <div style={fieldStyle}>
-            <label style={labelStyle}>Child's name <span style={{ color: 'red' }}>*</span></label>
-            <input style={{ ...inputStyle, backgroundColor: '#f5f5f5' }} value={`${form.playerFirstName} ${form.playerLastName}`.trim() || form.childName} onChange={e => update('childName', e.target.value)} />
-          </div>
+          {!program.adultOnly && !isParty && (
+            <>
+              <div style={fieldStyle}>
+                <label style={labelStyle}>Child's name <span style={{ color: 'red' }}>*</span></label>
+                <input style={{ ...inputStyle, backgroundColor: '#f5f5f5' }} value={`${form.playerFirstName} ${form.playerLastName}`.trim() || form.childName} onChange={e => update('childName', e.target.value)} />
+              </div>
 
-          <div style={fieldStyle}>
-            <label style={labelStyle}>Child's date of birth <span style={{ color: 'red' }}>*</span></label>
-            <input style={{ ...inputStyle, backgroundColor: '#f5f5f5' }} type="date" value={form.playerDob || form.childDob} onChange={e => update('childDob', e.target.value)} />
-          </div>
+              <div style={fieldStyle}>
+                <label style={labelStyle}>Child's date of birth <span style={{ color: 'red' }}>*</span></label>
+                <input style={{ ...inputStyle, backgroundColor: '#f5f5f5' }} type="date" value={form.playerDob || form.childDob} onChange={e => update('childDob', e.target.value)} />
+              </div>
 
-          <div style={fieldStyle}>
-            <label style={labelStyle}>Does the child need any accommodations?</label>
-            <input style={inputStyle} placeholder="Optional" value={form.accommodations} onChange={e => update('accommodations', e.target.value)} />
-          </div>
+              <div style={fieldStyle}>
+                <label style={labelStyle}>Does the child need any accommodations?</label>
+                <input style={inputStyle} placeholder="Optional" value={form.accommodations} onChange={e => update('accommodations', e.target.value)} />
+              </div>
+            </>
+          )}
 
           {showShirtSize && (
             <div style={fieldStyle}>
@@ -729,11 +886,75 @@ export default function RegistrationForm({ program }: { program: Program }) {
             </div>
           )}
 
-          <div style={{ backgroundColor: '#f7f8fa', borderRadius: '10px', padding: '14px 16px', fontSize: '13px', color: '#555', lineHeight: '1.6' }}>
-            <strong style={{ color: '#333' }}>Note:</strong> Prices include a 4% service charge.
-            {isParty && (
-              <span> Once your deposit is paid, our team will call you to confirm your party details.</span>
-            )}
+          {showShirtAddon && (
+            <div style={{ border: '2px solid #29ABE2', borderRadius: '10px', padding: '16px 18px', backgroundColor: '#f0faff' }}>
+              <label style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={form.needsShirt}
+                  onChange={e => update('needsShirt', e.target.checked)}
+                  style={{ marginTop: '2px', width: '18px', height: '18px', flexShrink: 0, accentColor: '#29ABE2' }}
+                />
+                <div>
+                  <span style={{ fontSize: '14px', fontWeight: '700', color: '#1a1a1a' }}>Add a Shooting Stars Dri-Fit shirt (+$20.80)</span>
+                  <p style={{ fontSize: '13px', color: '#555', marginTop: '3px' }}>Required for all training participants. Includes 4% service charge.</p>
+                </div>
+              </label>
+              {form.needsShirt && (
+                <div style={{ marginTop: '12px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '700', color: '#333', display: 'block', marginBottom: '6px' }}>Shirt size <span style={{ color: 'red' }}>*</span></label>
+                  <select style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '15px' }} value={form.shirtSizeAddon} onChange={e => update('shirtSizeAddon', e.target.value)}>
+                    <option value="">Select size</option>
+                    <option>YXS (Youth Extra Small)</option>
+                    <option>YS (Youth Small)</option>
+                    <option>YM (Youth Medium)</option>
+                    <option>YL (Youth Large)</option>
+                    <option>S (Adult Small)</option>
+                    <option>M (Adult Medium)</option>
+                    <option>L (Adult Large)</option>
+                    <option>XL (Adult XL)</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
+
+          {program.type === 'rental' && (
+            <div style={{ border: '2px solid #e5e7eb', borderRadius: '10px', padding: '16px 18px' }}>
+              <label style={{ fontSize: '14px', fontWeight: '700', color: '#1a1a1a', display: 'block', marginBottom: '8px' }}>
+                Number of players <span style={{ color: 'red' }}>*</span>
+              </label>
+              <p style={{ fontSize: '13px', color: '#555', marginBottom: '10px' }}>$100/hour for up to 10 players. $10 per additional player.</p>
+              <input
+                type="number"
+                min="1"
+                max="30"
+                value={form.playerCount}
+                onChange={e => update('playerCount', Math.max(1, parseInt(e.target.value) || 1))}
+                style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '15px' }}
+              />
+              {form.playerCount > 10 && (
+                <p style={{ fontSize: '13px', color: '#29ABE2', fontWeight: '600', marginTop: '8px' }}>
+                  {form.playerCount - 10} additional player{form.playerCount - 10 > 1 ? 's' : ''} × $10.40 = +${((form.playerCount - 10) * 10.40).toFixed(2)}
+                </p>
+              )}
+            </div>
+          )}
+
+          <div style={{ backgroundColor: '#f7f8fa', borderRadius: '10px', padding: '14px 16px', fontSize: '13px', color: '#555', lineHeight: '1.6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {!showShirtAddon && !isParty && <p><strong style={{ color: '#333' }}>Shooting Stars shirt required:</strong> All participants must wear an official Shooting Stars shirt. Shirts are available for purchase at the facility or <a href="/register/apparel" style={{ color: '#29ABE2', fontWeight: '600' }}>online here</a>.</p>}
+            <p><strong style={{ color: '#333' }}>Note:</strong> {isParty ? 'A 4% service charge will apply to the total. Once your deposit is paid, our team will call you to confirm your party details.' : 'Prices include a 4% service charge.'}</p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <input
+              type="text"
+              placeholder="Promo code (optional)"
+              value={promoCode}
+              onChange={e => setPromoCode(e.target.value)}
+              style={{ flex: 1, padding: '10px 12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }}
+            />
+            {promoApplied && <span style={{ color: '#16a34a', fontWeight: '700', fontSize: '13px', whiteSpace: 'nowrap' }}>✓ Applied</span>}
           </div>
 
           <div style={{ display: 'flex', gap: '12px' }}>
@@ -742,8 +963,14 @@ export default function RegistrationForm({ program }: { program: Program }) {
               onClick={() => {
                 const effectiveChildName = `${form.playerFirstName} ${form.playerLastName}`.trim() || form.childName;
                 const effectiveChildDob = form.playerDob || form.childDob;
-                if (!form.agreeToTerms || !effectiveChildName || !effectiveChildDob) {
+                if (!form.agreeToTerms) {
                   setError('Please fill in all required fields and agree to the terms.'); return;
+                }
+                if (!program.adultOnly && !isParty && (!effectiveChildName || !effectiveChildDob)) {
+                  setError('Please fill in all required fields and agree to the terms.'); return;
+                }
+                if (form.needsShirt && !form.shirtSizeAddon) {
+                  setError('Please select a shirt size.'); return;
                 }
                 setError('');
                 handleSubmit();
