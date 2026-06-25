@@ -129,15 +129,6 @@ function SuccessContent() {
 
         {/* Testimonials */}
         <ReviewRotator />
-          <a
-            href="https://www.shootingstarsindoorsoccer.com/testimonials-reviews"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ display: 'inline-block', marginTop: '14px', fontSize: '13px', color: '#29ABE2', fontWeight: '600', textDecoration: 'none' }}
-          >
-            Read more reviews →
-          </a>
-        </div>
 
         {/* Social + CTA */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
