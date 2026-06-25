@@ -272,7 +272,8 @@ export default function RegistrationForm({ program }: { program: Program }) {
     : (program.deposit ?? program.price);
   const promoApplied = promoCode.trim().toUpperCase() === PROMO_CODE;
   const additionalPlayerCharge = program.type === 'rental' && form.playerCount > 10 ? (form.playerCount - 10) * 10.40 : 0;
-  const dynamicPrice = promoApplied ? 1.00 : basePrice + (form.needsShirt ? SHIRT_PRICE : 0) + additionalPlayerCharge;
+  const registrationFeeAmount = (program.registrationFee && hasSessionGroups && selectedSessions.length > 0) ? program.registrationFee : 0;
+  const dynamicPrice = promoApplied ? 1.00 : basePrice + registrationFeeAmount + (form.needsShirt ? SHIRT_PRICE : 0) + additionalPlayerCharge;
 
   useEffect(() => {
     const el = document.getElementById('static-program-price');
@@ -963,6 +964,23 @@ export default function RegistrationForm({ program }: { program: Program }) {
             />
             {promoApplied && <span style={{ color: '#16a34a', fontWeight: '700', fontSize: '13px', whiteSpace: 'nowrap' }}>✓ Applied</span>}
           </div>
+
+          {registrationFeeAmount > 0 && (
+            <div style={{ backgroundColor: '#e8f7fd', borderRadius: '8px', padding: '12px 14px', fontSize: '13px', color: '#333' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>{selectedSessions.length} week{selectedSessions.length > 1 ? 's' : ''} x ${program.pricePerSession}</span>
+                <span>${(selectedSessions.length * (program.pricePerSession || 0)).toFixed(2)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                <span>One-time registration fee</span>
+                <span>${registrationFeeAmount.toFixed(2)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontWeight: '700', borderTop: '1px solid #c0e0f0', paddingTop: '8px' }}>
+                <span>Total</span>
+                <span>${dynamicPrice.toFixed(2)}</span>
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: '12px' }}>
             <button onClick={() => setStep((isParty || hasTimeSlots || hasSessionGroups) ? 3 : 2)} style={{ flex: 1, backgroundColor: '#f0f0f0', color: '#333', padding: '14px', borderRadius: '8px', fontWeight: '700', fontSize: '15px', border: 'none', cursor: 'pointer' }}>Back</button>
