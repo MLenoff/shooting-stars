@@ -502,11 +502,18 @@ export default function RegistrationForm({ program }: { program: Program }) {
                   ))}
                 </div>
 
-                <div style={{ marginTop: '12px', backgroundColor: '#e8f7fd', borderRadius: '8px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '14px', color: '#555' }}>
-                    {selectedSessions.length} of {allSessions.length} {program.sessionGroups?.length === 1 ? 'weeks' : 'sessions'} selected
-                  </span>
-                  <span style={{ fontSize: '16px', fontWeight: '700', color: '#0093c4' }}>${(selectedSessions.length * (program.pricePerSession || 0)).toFixed(2)}</span>
+                <div style={{ marginTop: '12px', backgroundColor: '#e8f7fd', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '14px', color: '#555' }}>
+                      {selectedSessions.length} of {allSessions.length} {program.sessionGroups?.length === 1 ? 'weeks' : 'sessions'} selected
+                    </span>
+                    <span style={{ fontSize: '16px', fontWeight: '700', color: '#0093c4' }}>${(selectedSessions.length * (program.pricePerSession || 0)).toFixed(2)}</span>
+                  </div>
+                  {program.registrationFee && selectedSessions.length > 0 && (
+                    <p style={{ fontSize: '12px', color: '#e05c2a', fontWeight: '600', marginTop: '6px', textAlign: 'right' }}>
+                      + ${program.registrationFee} one-time registration fee at checkout
+                    </p>
+                  )}
                 </div>
               </div>
             );

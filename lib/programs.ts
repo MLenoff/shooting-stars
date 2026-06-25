@@ -97,9 +97,6 @@ export const programs: Program[] = [
       {
         label: 'Summer Camp 2026',
         sessions: [
-          'Week 1: June 8–12',
-          'Week 2: June 15–19',
-          'Week 3: June 22–26',
           'Week 4: June 29 – July 3',
           'Week 5: July 6–10',
           'Week 6: July 13–17',
