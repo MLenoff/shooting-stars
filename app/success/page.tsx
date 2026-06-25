@@ -84,12 +84,16 @@ function SuccessContent() {
         <div style={{ backgroundColor: '#fff', border: '1px solid #e4e8ee', borderRadius: '12px', padding: '20px 24px', marginBottom: '20px' }}>
           <p style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#aaa', margin: '0 0 14px' }}>What families are saying</p>
           <div style={{ marginBottom: '14px', paddingBottom: '14px', borderBottom: '1px solid #f5f5f5' }}>
-            <p style={{ fontSize: '13px', color: '#444', lineHeight: '1.6', margin: '0 0 6px' }}>"My son has been going for two years and he's grown so much. The coaches genuinely care about every kid."</p>
-            <p style={{ fontSize: '12px', color: '#bbb', margin: 0 }}>— Maria R., Shooting Stars parent</p>
+            <p style={{ fontSize: '13px', color: '#444', lineHeight: '1.6', margin: '0 0 6px' }}>"The perfect birthday spot for our son's 2nd birthday! Everything was perfect from the decorations to the help we had from Mackenzie and Lourdes. We will definitely be doing more parties and classes there!"</p>
+            <p style={{ fontSize: '12px', color: '#bbb', margin: 0 }}>— Steven Bonnen</p>
+          </div>
+          <div style={{ marginBottom: '14px', paddingBottom: '14px', borderBottom: '1px solid #f5f5f5' }}>
+            <p style={{ fontSize: '13px', color: '#444', lineHeight: '1.6', margin: '0 0 6px' }}>"We had the BEST experience hosting my son's 7th birthday party at Shooting Stars. From start to finish, everything was incredibly well organized and stress free. The staff was amazing, so friendly, helpful, and great with all the kids."</p>
+            <p style={{ fontSize: '12px', color: '#bbb', margin: 0 }}>— Yesenia Ramirez</p>
           </div>
           <div>
-            <p style={{ fontSize: '13px', color: '#444', lineHeight: '1.6', margin: '0 0 6px' }}>"Best decision we made for our daughter. She went from shy to confident in just a few months."</p>
-            <p style={{ fontSize: '12px', color: '#bbb', margin: 0 }}>— Jennifer T., Shooting Stars parent</p>
+            <p style={{ fontSize: '13px', color: '#444', lineHeight: '1.6', margin: '0 0 6px' }}>"They are THE BEST! We hosted my son's 4th birthday party here and they made everything seamless. The coaches were great and played with the kids. I couldn't recommend them more!"</p>
+            <p style={{ fontSize: '12px', color: '#bbb', margin: 0 }}>— Carly M</p>
           </div>
           <a
             href="https://www.shootingstarsindoorsoccer.com/testimonials-reviews"
