@@ -61,6 +61,7 @@ function ProgramCard({ program }: { program: Awaited<ReturnType<typeof getProgra
             <span style={{ fontSize: '24px', fontWeight: '900', color: '#1a1a1a' }}>
               {program.sessionGroups?.length ? `$${program.pricePerSession}/week` : program.price === 0 ? 'Contact us' : `$${program.price.toFixed(2)}`}
             </span>
+            {program.registrationFee && <p style={{ fontSize: '12px', color: '#e05c2a', fontWeight: '600', marginTop: '2px' }}>+ ${program.registrationFee} one-time registration fee</p>}
             {program.price > 0 && <p style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>Price includes 4% service charge</p>}
             {program.spotsAvailable && <p style={{ fontSize: '12px', color: '#e05c2a', fontWeight: '600', marginTop: '2px' }}>{program.spotsAvailable} spots left</p>}
           </div>
