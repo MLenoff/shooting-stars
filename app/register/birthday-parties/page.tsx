@@ -122,7 +122,7 @@ export default async function BirthdayPartiesPage() {
 
               <PolicyBox accentColor="#757575" />
 
-              <Link href="/register/birthday-silver" style={{
+              <a href="#book" style={{
                 display: 'inline-block',
                 backgroundColor: '#757575',
                 color: 'white',
@@ -133,7 +133,7 @@ export default async function BirthdayPartiesPage() {
                 textDecoration: 'none',
               }}>
                 Book Silver Package
-              </Link>
+              </a>
             </div>
           </div>
         )}
@@ -192,7 +192,7 @@ export default async function BirthdayPartiesPage() {
 
               <PolicyBox accentColor="#f57f17" />
 
-              <Link href="/register/birthday-gold" style={{
+              <a href="#book" style={{
                 display: 'inline-block',
                 backgroundColor: '#f57f17',
                 color: 'white',
@@ -203,10 +203,22 @@ export default async function BirthdayPartiesPage() {
                 textDecoration: 'none',
               }}>
                 Book Gold Package
-              </Link>
+              </a>
             </div>
           </div>
         )}
+
+        {/* Booking embed */}
+        <div id="book" style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.07)', padding: '32px 28px' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: '900', color: '#1a1a1a', marginBottom: '8px' }}>Book Your Party</h2>
+          <p style={{ fontSize: '14px', color: '#777', marginBottom: '24px' }}>Pick your date and time below. A $156.50 deposit holds your spot.</p>
+          <iframe
+            src="https://api.leadconnectorhq.com/widget/booking/GAlWe9VfqHeWupdW5rJZ"
+            style={{ width: '100%', border: 'none', minHeight: '700px', borderRadius: '8px' }}
+            scrolling="no"
+            title="Book a Birthday Party"
+          />
+        </div>
 
         {/* FAQ */}
         <div style={{ marginTop: '16px' }}>
