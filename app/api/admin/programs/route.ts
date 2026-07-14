@@ -18,6 +18,10 @@ export async function GET() {
       age_group: (ov?.age_group as string) ?? p.ageGroup ?? '',
       active: (ov?.active as boolean) ?? p.active,
       flyer: (ov?.flyer as string) ?? p.flyer ?? '',
+      registration_closed: (ov?.registration_closed as boolean | null) ?? null,
+      registration_closed_default: p.registrationClosed ?? false,
+      session_groups: p.sessionGroups ?? null,
+      sessions_override: (ov?.sessions_override as string[] | null) ?? null,
     };
   });
 
@@ -25,13 +29,17 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { id, name, price, dates, times, description, age_group, active, flyer } = await req.json();
+  const body = await req.json();
+  const { id } = body;
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-  const { error } = await supabaseAdmin
-    .from('program_settings')
-    .upsert({ id, name, price, dates, times, description, age_group, active, flyer, updated_at: new Date().toISOString() });
+  const allowed = ['name', 'price', 'dates', 'times', 'description', 'age_group', 'active', 'flyer', 'registration_closed', 'sessions_override'];
+  const upsertData: Record<string, unknown> = { id, updated_at: new Date().toISOString() };
+  for (const key of allowed) {
+    if (key in body) upsertData[key] = body[key];
+  }
 
+  const { error } = await supabaseAdmin.from('program_settings').upsert(upsertData);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

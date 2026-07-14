@@ -18,6 +18,14 @@ export async function getProgramsFromSheet(): Promise<Program[]> {
       .map(p => {
         const ov = overrides.get(p.id);
         if (!ov) return p;
+        let sessionGroups = p.sessionGroups;
+        if (ov.sessions_override != null && p.sessionGroups) {
+          const enabled = ov.sessions_override as string[];
+          sessionGroups = p.sessionGroups
+            .map(g => ({ ...g, sessions: g.sessions.filter(s => enabled.includes(s)) }))
+            .filter(g => g.sessions.length > 0);
+        }
+
         return {
           ...p,
           ...(ov.name != null ? { name: ov.name as string } : {}),
@@ -28,6 +36,8 @@ export async function getProgramsFromSheet(): Promise<Program[]> {
           ...(ov.age_group != null ? { ageGroup: ov.age_group as string } : {}),
           ...(ov.active != null ? { active: ov.active as boolean } : {}),
           ...(ov.flyer != null ? { flyer: ov.flyer as string } : {}),
+          ...(ov.registration_closed != null ? { registrationClosed: ov.registration_closed as boolean } : {}),
+          sessionGroups,
         };
       })
       .filter(p => p.active);

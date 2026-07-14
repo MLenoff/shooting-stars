@@ -16,6 +16,11 @@ interface Pack {
   phone?: string;
 }
 
+interface SessionGroup {
+  label: string;
+  sessions: string[];
+}
+
 interface ProgramRow {
   id: string;
   name: string;
@@ -26,6 +31,10 @@ interface ProgramRow {
   age_group: string;
   active: boolean;
   flyer: string;
+  registration_closed: boolean | null;
+  registration_closed_default: boolean;
+  session_groups: SessionGroup[] | null;
+  sessions_override: string[] | null;
 }
 
 const ADMIN_PASSWORD = 'ShootingStars2026!';
@@ -130,10 +139,26 @@ export default function AdminSessionsPage() {
   }
 
   async function saveProgram(id: string) {
+    const allSessions = (editProg.session_groups ?? []).flatMap(g => g.sessions);
+    const currentOverride = editProg.sessions_override;
+    const sessionsOverride = (currentOverride && currentOverride.length < allSessions.length) ? currentOverride : null;
+
     await fetch('/api/admin/programs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, ...editProg }),
+      body: JSON.stringify({
+        id,
+        name: editProg.name,
+        price: editProg.price,
+        dates: editProg.dates,
+        times: editProg.times,
+        description: editProg.description,
+        age_group: editProg.age_group,
+        active: editProg.active,
+        flyer: editProg.flyer,
+        registration_closed: editProg.registration_closed ?? null,
+        sessions_override: sessionsOverride ?? null,
+      }),
     });
     setProgMsg('Program updated.');
     setEditProgId(null);
@@ -145,9 +170,21 @@ export default function AdminSessionsPage() {
     await fetch('/api/admin/programs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: prog.id, name: prog.name, price: prog.price, dates: prog.dates, times: prog.times, description: prog.description, age_group: prog.age_group, active: !prog.active, flyer: prog.flyer }),
+      body: JSON.stringify({ id: prog.id, active: !prog.active }),
     });
     setProgMsg(`${prog.name} ${prog.active ? 'hidden' : 'shown'}.`);
+    loadPrograms();
+  }
+
+  async function toggleRegistrationClosed(prog: ProgramRow) {
+    const isClosed = prog.registration_closed === true || (prog.registration_closed === null && prog.registration_closed_default);
+    const newValue = isClosed ? null : true;
+    await fetch('/api/admin/programs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: prog.id, registration_closed: newValue }),
+    });
+    setProgMsg(newValue ? `${prog.name} marked as Full.` : `${prog.name} reopened.`);
     loadPrograms();
   }
 
@@ -354,7 +391,18 @@ export default function AdminSessionsPage() {
                         </div>
                         {prog.times && <p style={{ fontSize: '12px', color: '#aaa', marginTop: '3px' }}>{prog.times}</p>}
                       </div>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        {(() => {
+                          const isClosed = prog.registration_closed === true || (prog.registration_closed === null && prog.registration_closed_default);
+                          return (
+                            <button
+                              onClick={() => toggleRegistrationClosed(prog)}
+                              style={{ padding: '7px 14px', backgroundColor: isClosed ? '#fff0f0' : '#f5f5f5', color: isClosed ? '#e53e3e' : '#aaa', borderRadius: '8px', border: 'none', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
+                            >
+                              {isClosed ? 'Full' : 'Open'}
+                            </button>
+                          );
+                        })()}
                         <button
                           onClick={() => toggleActive(prog)}
                           style={{ padding: '7px 14px', backgroundColor: prog.active ? '#f0fdf4' : '#fff0f0', color: prog.active ? '#16a34a' : '#e53e3e', borderRadius: '8px', border: 'none', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
@@ -362,7 +410,18 @@ export default function AdminSessionsPage() {
                           {prog.active ? 'Visible' : 'Hidden'}
                         </button>
                         <button
-                          onClick={() => { setEditProgId(editProgId === prog.id ? null : prog.id); setEditProg({ name: prog.name, price: prog.price, dates: prog.dates, times: prog.times, description: prog.description, age_group: prog.age_group, active: prog.active, flyer: prog.flyer }); }}
+                          onClick={() => {
+                            setEditProgId(editProgId === prog.id ? null : prog.id);
+                            const allSessions = (prog.session_groups ?? []).flatMap(g => g.sessions);
+                            setEditProg({
+                              name: prog.name, price: prog.price, dates: prog.dates, times: prog.times,
+                              description: prog.description, age_group: prog.age_group, active: prog.active, flyer: prog.flyer,
+                              registration_closed: prog.registration_closed,
+                              registration_closed_default: prog.registration_closed_default,
+                              session_groups: prog.session_groups,
+                              sessions_override: prog.sessions_override ?? (allSessions.length > 0 ? allSessions : null),
+                            });
+                          }}
                           style={{ padding: '7px 14px', backgroundColor: '#f5f0ff', color: '#7c3aed', borderRadius: '8px', border: 'none', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
                         >
                           Edit
@@ -405,6 +464,43 @@ export default function AdminSessionsPage() {
                             <img src={editProg.flyer} alt="Flyer preview" style={{ marginTop: '8px', maxHeight: '120px', borderRadius: '6px', objectFit: 'cover' }} onError={e => (e.currentTarget.style.display = 'none')} />
                           )}
                         </div>
+                        {(editProg.session_groups?.length ?? 0) > 0 && (() => {
+                          const allSessions = (editProg.session_groups ?? []).flatMap(g => g.sessions);
+                          const enabledSessions = editProg.sessions_override ?? allSessions;
+                          return (
+                            <div>
+                              <label style={{ fontSize: '11px', fontWeight: '700', color: '#999', textTransform: 'uppercase' as const, display: 'block', marginBottom: '8px' }}>
+                                Available Sessions / Weeks
+                              </label>
+                              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
+                                {allSessions.map(session => (
+                                  <label key={session} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '14px', color: '#333' }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={enabledSessions.includes(session)}
+                                      onChange={e => {
+                                        const current = editProg.sessions_override ?? allSessions;
+                                        const updated = e.target.checked
+                                          ? [...current.filter(s => s !== session), session]
+                                          : current.filter(s => s !== session);
+                                        setEditProg(p => ({ ...p, sessions_override: updated.length === allSessions.length ? null : updated }));
+                                      }}
+                                    />
+                                    {session}
+                                  </label>
+                                ))}
+                              </div>
+                              {editProg.sessions_override && (
+                                <button
+                                  onClick={() => setEditProg(p => ({ ...p, sessions_override: null }))}
+                                  style={{ marginTop: '8px', fontSize: '12px', color: '#aaa', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                                >
+                                  Reset (enable all)
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })()}
                         <div style={{ display: 'flex', gap: '10px' }}>
                           <button onClick={() => saveProgram(prog.id)} style={{ padding: '9px 20px', backgroundColor: '#29ABE2', color: 'white', borderRadius: '8px', border: 'none', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>Save Changes</button>
                           <button onClick={() => { setEditProgId(null); setEditProg({}); }} style={{ padding: '9px 16px', backgroundColor: '#f0f0f0', color: '#666', borderRadius: '8px', border: 'none', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
