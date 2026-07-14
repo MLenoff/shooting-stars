@@ -83,6 +83,7 @@ export const programs: Program[] = [
     ageGroup: 'Ages 4-12',
     active: true,
     flyer: '/autism.avif',
+    registrationClosed: true,
   },
   {
     id: 'summer-camp-2026',
