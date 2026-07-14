@@ -21,64 +21,20 @@ export async function POST(req: NextRequest) {
 
   const event = JSON.parse(body);
 
-  if (event.type === 'payment.completed') {
+  if (
+    (event.type === 'payment.updated' || event.type === 'payment.created') &&
+    event.data?.object?.payment?.status === 'COMPLETED'
+  ) {
     const payment = event.data?.object?.payment;
     const orderId = payment?.order_id;
 
-    if (!orderId) {
-      return NextResponse.json({ received: true });
+    if (orderId) {
+      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/create-booking`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      });
     }
-
-    const isSandbox = process.env.SQUARE_ENVIRONMENT === 'sandbox';
-    const squareBaseUrl = isSandbox
-      ? 'https://connect.squareupsandbox.com'
-      : 'https://connect.squareup.com';
-
-    // Fetch the order to read the booking metadata embedded at checkout
-    const orderRes = await fetch(`${squareBaseUrl}/v2/orders/${orderId}`, {
-      headers: {
-        'Authorization': `Bearer ${process.env.SQUARE_ACCESS_TOKEN}`,
-        'Square-Version': '2024-01-18',
-      },
-    });
-
-    if (!orderRes.ok) {
-      console.error('Square webhook: failed to fetch order', orderId);
-      return NextResponse.json({ received: true });
-    }
-
-    const orderData = await orderRes.json();
-    const metadata = orderData.order?.metadata || {};
-
-    const {
-      programId,
-      programName,
-      customerName,
-      customerEmail,
-      selectedDate,
-      selectedTimeSlot,
-      selectedSessions: sessionsStr,
-    } = metadata;
-
-    if (!programId || !customerName) {
-      return NextResponse.json({ received: true });
-    }
-
-    const selectedSessions = sessionsStr ? JSON.parse(sessionsStr) : [];
-
-    await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/create-booking`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        programId,
-        programName,
-        customerName,
-        customerEmail,
-        date: selectedDate,
-        slot: selectedTimeSlot,
-        selectedSessions,
-      }),
-    });
   }
 
   return NextResponse.json({ received: true });

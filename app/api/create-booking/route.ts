@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { google } from 'googleapis';
 import { createBookingEvent } from '@/lib/calendar';
 import { supabaseAdmin } from '@/lib/supabase';
+import { incrementSpot, getAcademyAgeGroup } from '@/lib/spots';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,12 +38,30 @@ async function sendEmail({ to, subject, html, fromName }: { to: string; subject:
   });
 }
 
-
 const PACK_SESSIONS: Record<string, number> = {
   'training-10pack': 10,
   'training-20pack': 20,
   'group-training-10pack': 10,
   'group-training-20pack': 20,
+};
+
+const PROGRAM_TAB_MAP: Record<string, string> = {
+  'summer-camp-2026': 'Summer Camp 2026',
+  'twinkle-stars': 'Twinkle Stars',
+  'little-stars': 'Little Stars',
+  'autism-kicks': 'Autism Kicks',
+  'summer-training-academy': 'Summer Training',
+  'elite-group-training': 'Elite Group Training',
+  'individual-training': '1-on-1 Training',
+  'training-10pack': '10-Session Package',
+  'training-20pack': '10-Session Package',
+  'group-training-10pack': 'Group 10 Sessions',
+  'group-training-20pack': 'Group 20 Sessions',
+  'birthday-silver': 'Silver Birthday Party',
+  'birthday-gold': 'Gold Birthday Party',
+  'adult-open-play': 'Adult Open Play',
+  'dri-fit-apparel': 'Apparel',
+  'cotton-apparel': 'Apparel',
 };
 
 function formatDate(dateStr: string) {
@@ -66,7 +86,7 @@ async function verifySquareOrder(orderId: string): Promise<{ ok: boolean; metada
   if (!res.ok) return { ok: false };
   const data = await res.json();
   const state = data.order?.state;
-  const cents = data.order?.totalMoney?.amount;
+  const cents = data.order?.totalMoney?.amount ?? data.order?.total_money?.amount;
   const amountPaid = cents != null ? `$${(Number(cents) / 100).toFixed(2)}` : undefined;
   return {
     ok: state === 'COMPLETED' || state === 'OPEN',
@@ -75,16 +95,59 @@ async function verifySquareOrder(orderId: string): Promise<{ ok: boolean; metada
   };
 }
 
-export async function POST(req: NextRequest) {
-  const { programName, programId, customerName, customerEmail, date, slot, orderId } = await req.json();
-
-  if (!programName || !programId || !customerName) {
-    return NextResponse.json({ ok: false, error: 'Missing required fields' });
+// Claim an order for exactly-once processing. Returns true if this call won the
+// claim (should process), false if already processed (skip).
+// Fails OPEN on unexpected errors so a confirmation is never suppressed.
+async function claimOrder(orderId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('processed_orders')
+      .insert({ order_id: orderId })
+      .select('order_id');
+    if (error) {
+      if (error.code === '23505') return false; // already processed
+      console.error('claimOrder unexpected error, failing open:', error);
+      return true;
+    }
+    return !!(data && data.length);
+  } catch (e) {
+    console.error('claimOrder threw, failing open:', e);
+    return true;
   }
+}
 
-  // Verify payment with Square before processing anything
+async function appendToSheet(programId: string, row: string[]) {
+  const privateKey = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '';
+  const spreadsheetId = process.env.GOOGLE_SHEETS_ID || '';
+  if (!privateKey || !clientEmail || !spreadsheetId) return;
+
+  const auth = new google.auth.JWT({ email: clientEmail, key: privateKey, scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
+  const sheets = google.sheets({ version: 'v4', auth });
+  const tab = PROGRAM_TAB_MAP[programId] || 'Sheet1';
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: `${tab}!A:K`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values: [row] },
+  });
+}
+
+export async function POST(req: NextRequest) {
+  const body = await req.json();
+  const orderId: string | undefined = body.orderId;
+
+  let programId = body.programId as string | undefined;
+  let programName = body.programName as string | undefined;
+  let customerName = body.customerName as string | undefined;
+  let customerEmail = body.customerEmail as string | undefined;
+  let date = body.date as string | undefined;
+  let slot = body.slot as string | undefined;
+  let selectedSessions: string[] = Array.isArray(body.selectedSessions) ? body.selectedSessions : [];
   let orderMetadata: Record<string, string> = {};
   let amountPaid: string | undefined;
+
   if (orderId) {
     const { ok: paid, metadata, amountPaid: amount } = await verifySquareOrder(orderId);
     if (!paid) {
@@ -93,9 +156,74 @@ export async function POST(req: NextRequest) {
     }
     orderMetadata = metadata || {};
     amountPaid = amount;
+
+    const won = await claimOrder(orderId);
+    if (!won) {
+      return NextResponse.json({ ok: true, duplicate: true });
+    }
+
+    programId = orderMetadata.programId || programId;
+    programName = orderMetadata.programName || programName;
+    customerName = orderMetadata.customerName || customerName;
+    customerEmail = orderMetadata.customerEmail || customerEmail;
+    if (orderMetadata.dateSlot) {
+      const [d, s] = orderMetadata.dateSlot.split(' | ');
+      date = d || date;
+      slot = s || slot;
+    }
+    if (orderMetadata.selectedSessions) {
+      selectedSessions = orderMetadata.selectedSessions.split(', ').filter(Boolean);
+    }
   }
 
-  // If this is a session pack, create a Supabase record + auth account
+  if (!programName || !programId || !customerName) {
+    return NextResponse.json({ ok: false, error: 'Missing required fields' });
+  }
+
+  const playerParts = (orderMetadata.playerDetails || '').split(' | ');
+  const playerName = playerParts[0] || '';
+  const playerDob = (playerParts.find((p: string) => p.startsWith('DOB:')) || '').replace('DOB: ', '');
+  const playerAge = (playerParts.find((p: string) => p.startsWith('Age:')) || '').replace('Age: ', '');
+
+  // 1. Log to registration Sheet
+  if (orderId) {
+    const sessionOrDate = selectedSessions.length > 0
+      ? selectedSessions.join(', ')
+      : [date, slot].filter(Boolean).join(' | ');
+    const row = [
+      new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }),
+      customerName,
+      customerEmail || '',
+      orderMetadata.phone || '',
+      playerName,
+      playerDob,
+      playerAge,
+      orderMetadata.playerLevel || '',
+      sessionOrDate,
+      amountPaid || '',
+      orderMetadata.address || '',
+    ];
+    try {
+      await appendToSheet(programId, row);
+    } catch (e) {
+      console.error('Sheets write failed:', e);
+    }
+
+    // 2. Increment spot count for capacity-tracked programs
+    const trackedPrograms = ['twinkle-stars', 'little-stars', 'autism-kicks', 'summer-training-academy'];
+    if (trackedPrograms.includes(programId)) {
+      try {
+        const ageGroup = programId === 'summer-training-academy'
+          ? getAcademyAgeGroup(parseInt(playerAge || '0', 10))
+          : '';
+        await incrementSpot(programId, ageGroup);
+      } catch (e) {
+        console.error('Spot increment failed:', e);
+      }
+    }
+  }
+
+  // 3. Session pack record + auth account
   const sessionsTotal = PACK_SESSIONS[programId];
   if (sessionsTotal && customerEmail) {
     const purchaseDate = new Date();
@@ -112,14 +240,13 @@ export async function POST(req: NextRequest) {
       expires_at: expiresAt.toISOString(),
     });
 
-    // Create Supabase auth account (sends invite email with set-password link)
     await supabaseAdmin.auth.admin.inviteUserByEmail(customerEmail, {
       data: { name: customerName },
       redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/my-sessions`,
-    }).catch(() => {}); // ignore if account already exists
+    }).catch(() => {});
   }
 
-  // Create calendar event if date and slot provided
+  // 4. Calendar event
   if (date && slot) {
     try {
       await createBookingEvent({ programName, programId, customerName, date, slot, customerEmail, customerPhone: orderMetadata.phone, playerDetails: orderMetadata.playerDetails, playerLevel: orderMetadata.playerLevel });
@@ -128,13 +255,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Send confirmation email
+  // 5. Customer confirmation + staff notification
   if (customerEmail) {
     const hasDateSlot = date && slot;
     const isPack = !!sessionsTotal;
 
     const dateSlotLine = hasDateSlot
-      ? `<p><strong>Date:</strong> ${formatDate(date)}</p><p><strong>Time:</strong> ${slot}</p>`
+      ? `<p><strong>Date:</strong> ${formatDate(date!)}</p><p><strong>Time:</strong> ${slot}</p>`
       : '';
 
     const packLine = isPack
@@ -168,7 +295,6 @@ export async function POST(req: NextRequest) {
       `,
     });
 
-    // Send notification to staff
     const m = orderMetadata;
     const addressLine = [m.address, m.city, m.state, m.zip].filter(Boolean).join(', ');
     await sendEmail({
@@ -179,7 +305,7 @@ export async function POST(req: NextRequest) {
         <div style="font-family: sans-serif; font-size: 14px; color: #1a1a1a; max-width: 520px;">
           <h2 style="margin-bottom: 16px;">New Registration</h2>
           <p><strong>Program:</strong> ${programName}</p>
-          ${hasDateSlot ? `<p><strong>Date:</strong> ${formatDate(date)}</p><p><strong>Time:</strong> ${slot}</p>` : ''}
+          ${hasDateSlot ? `<p><strong>Date:</strong> ${formatDate(date!)}</p><p><strong>Time:</strong> ${slot}</p>` : ''}
           ${isPack ? `<p><strong>Pack:</strong> ${sessionsTotal} sessions</p>` : ''}
           ${amountPaid ? `<p><strong>Amount paid:</strong> ${amountPaid}</p>` : ''}
           <hr style="margin: 16px 0;" />
@@ -187,8 +313,7 @@ export async function POST(req: NextRequest) {
           ${m.phone ? `<p><strong>Phone:</strong> ${m.phone}</p>` : ''}
           ${customerEmail ? `<p><strong>Email:</strong> ${customerEmail}</p>` : ''}
           ${addressLine ? `<p><strong>Address:</strong> ${addressLine}</p>` : ''}
-          ${m.dob ? `<p><strong>Parent DOB:</strong> ${m.dob}</p>` : ''}
-          ${m.playerDetails ? `<p><strong>Player:</strong> ${m.playerDetails}</p>` : ''}
+          ${playerName ? `<p><strong>Player:</strong> ${orderMetadata.playerDetails}</p>` : ''}
           ${m.playerLevel ? `<p><strong>Level:</strong> ${m.playerLevel}</p>` : ''}
           ${m.shirtSize ? `<p><strong>Shirt Size:</strong> ${m.shirtSize}</p>` : ''}
           ${m.accommodations ? `<p><strong>Accommodations:</strong> ${m.accommodations}</p>` : ''}

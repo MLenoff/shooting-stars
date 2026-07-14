@@ -20,28 +20,27 @@ function QuantitySelector({ value, onChange }: { value: number; onChange: (n: nu
 
 export default function ApparelPage() {
   const [quantities, setQuantities] = useState<Record<string, number>>({ 'dri-fit-apparel': 0, 'cotton-apparel': 0 });
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const total = SHIRTS.reduce((sum, s) => sum + (quantities[s.id] || 0) * s.price, 0);
   const hasItems = total > 0;
+  const canCheckout = hasItems && name.trim() && email.trim();
 
   async function handleCheckout() {
     setLoading(true);
     const items = SHIRTS.filter(s => quantities[s.id] > 0);
     const programName = items.map(s => `${s.name} x${quantities[s.id]}`).join(', ');
+    const programId = items.length === 1 ? items[0].id : 'dri-fit-apparel';
+    const [firstName, ...rest] = name.trim().split(' ');
     const res = await fetch('/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        programId: items.length === 1 ? items[0].id : 'dri-fit-apparel',
-        programName,
-        programType: 'apparel',
-        price: total,
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
+        program: { id: programId, name: programName, price: total, type: 'apparel' },
+        form: { firstName, lastName: rest.join(' '), email: email.trim(), phone: '' },
       }),
     });
     const data = await res.json();
@@ -81,14 +80,30 @@ export default function ApparelPage() {
 
           {hasItems && (
             <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.07)', padding: '24px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  style={{ padding: '12px 16px', borderRadius: '10px', border: '2px solid #e0e0e0', fontSize: '15px', outline: 'none', width: '100%', boxSizing: 'border-box' }}
+                />
+                <input
+                  type="email"
+                  placeholder="Email address"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  style={{ padding: '12px 16px', borderRadius: '10px', border: '2px solid #e0e0e0', fontSize: '15px', outline: 'none', width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <span style={{ fontSize: '16px', color: '#555' }}>Total</span>
                 <span style={{ fontSize: '28px', fontWeight: '900', color: '#1a1a1a' }}>${total.toFixed(2)}</span>
               </div>
               <button
                 onClick={handleCheckout}
-                disabled={loading}
-                style={{ width: '100%', backgroundColor: loading ? '#aaa' : '#29ABE2', color: 'white', padding: '16px', borderRadius: '12px', fontWeight: '800', fontSize: '16px', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}
+                disabled={loading || !canCheckout}
+                style={{ width: '100%', backgroundColor: loading || !canCheckout ? '#aaa' : '#29ABE2', color: 'white', padding: '16px', borderRadius: '12px', fontWeight: '800', fontSize: '16px', border: 'none', cursor: loading || !canCheckout ? 'not-allowed' : 'pointer' }}
               >
                 {loading ? 'Redirecting...' : `Buy Now — $${total.toFixed(2)}`}
               </button>
