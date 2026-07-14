@@ -29,6 +29,7 @@ export interface Program {
   calendarEventTitle?: string;
   timeSlots?: string[];
   registrationFee?: number;
+  registrationClosed?: boolean;
 }
 
 export const programs: Program[] = [
@@ -56,6 +57,7 @@ export const programs: Program[] = [
     ageGroup: 'Ages 2-3',
     active: true,
     flyer: '/twinkle.avif',
+    registrationClosed: true,
   },
   {
     id: 'little-stars',
@@ -67,6 +69,7 @@ export const programs: Program[] = [
     price: 160,
     ageGroup: 'Ages 4-6',
     active: true,
+    registrationClosed: true,
     flyer: '/twinkle.avif',
   },
   {

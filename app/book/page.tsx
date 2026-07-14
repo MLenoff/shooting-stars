@@ -56,24 +56,36 @@ function ProgramCard({ program }: { program: Awaited<ReturnType<typeof getProgra
             <span style={{ color: '#333', fontWeight: '600' }}>{program.times}</span>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <span style={{ fontSize: '24px', fontWeight: '900', color: '#1a1a1a' }}>
-              {program.sessionGroups?.length ? `$${program.pricePerSession}/week` : program.price === 0 ? 'Contact us' : `$${program.price.toFixed(2)}`}
-            </span>
-            {program.registrationFee && <p style={{ fontSize: '12px', color: '#e05c2a', fontWeight: '600', marginTop: '2px' }}>+ ${program.registrationFee} one-time registration fee</p>}
-            {program.price > 0 && <p style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>Price includes 4% service charge</p>}
-            {program.spotsAvailable && <p style={{ fontSize: '12px', color: '#e05c2a', fontWeight: '600', marginTop: '2px' }}>{program.spotsAvailable} spots left</p>}
+        {program.registrationClosed ? (
+          <div style={{ backgroundColor: '#fff3f3', border: '1px solid #ffd0d0', borderRadius: '10px', padding: '14px 16px' }}>
+            <p style={{ fontSize: '13px', fontWeight: '800', color: '#c0392b', margin: '0 0 4px' }}>Registration Closed — Class Full</p>
+            <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>Reach out and we&apos;ll try to find a spot for you.</p>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '12px', flexWrap: 'wrap' }}>
+              <a href="https://wa.me/19549003292" target="_blank" rel="noopener noreferrer" style={{ backgroundColor: '#25D366', color: 'white', padding: '8px 16px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', textDecoration: 'none' }}>WhatsApp</a>
+              <a href="mailto:admin@shootingstarsindoorsoccer.com" style={{ backgroundColor: '#f0f0f0', color: '#333', padding: '8px 16px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', textDecoration: 'none' }}>Email</a>
+              <a href="tel:9549003292" style={{ backgroundColor: '#f0f0f0', color: '#333', padding: '8px 16px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', textDecoration: 'none' }}>Call</a>
+            </div>
           </div>
-          <Link
-            href={program.contactUrl || `/register/${program.id}`}
-            target={program.contactUrl ? '_blank' : undefined}
-            rel={program.contactUrl ? 'noopener noreferrer' : undefined}
-            style={{ backgroundColor: program.contactUrl ? '#25D366' : '#29ABE2', color: 'white', padding: '12px 24px', borderRadius: '10px', fontWeight: '700', fontSize: '14px', textDecoration: 'none', letterSpacing: '0.3px' }}
-          >
-            {program.contactUrl ? 'More Info' : 'Book Now'}
-          </Link>
-        </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <span style={{ fontSize: '24px', fontWeight: '900', color: '#1a1a1a' }}>
+                {program.sessionGroups?.length ? `$${program.pricePerSession}/week` : program.price === 0 ? 'Contact us' : `$${program.price.toFixed(2)}`}
+              </span>
+              {program.registrationFee && <p style={{ fontSize: '12px', color: '#e05c2a', fontWeight: '600', marginTop: '2px' }}>+ ${program.registrationFee} one-time registration fee</p>}
+              {program.price > 0 && <p style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>Price includes 4% service charge</p>}
+              {program.spotsAvailable && <p style={{ fontSize: '12px', color: '#e05c2a', fontWeight: '600', marginTop: '2px' }}>{program.spotsAvailable} spots left</p>}
+            </div>
+            <Link
+              href={program.contactUrl || `/register/${program.id}`}
+              target={program.contactUrl ? '_blank' : undefined}
+              rel={program.contactUrl ? 'noopener noreferrer' : undefined}
+              style={{ backgroundColor: program.contactUrl ? '#25D366' : '#29ABE2', color: 'white', padding: '12px 24px', borderRadius: '10px', fontWeight: '700', fontSize: '14px', textDecoration: 'none', letterSpacing: '0.3px' }}
+            >
+              {program.contactUrl ? 'More Info' : 'Book Now'}
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
