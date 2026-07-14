@@ -213,9 +213,9 @@ export default async function BirthdayPartiesPage() {
           <h2 style={{ fontSize: '22px', fontWeight: '900', color: '#1a1a1a', marginBottom: '8px' }}>Book Your Party</h2>
           <p style={{ fontSize: '14px', color: '#777', marginBottom: '24px' }}>Pick your date and time below. A $156.50 deposit holds your spot.</p>
           <iframe
-            src="https://api.leadconnectorhq.com/widget/booking/GAlWe9VfqHeWupdW5rJZ"
+            src="https://www.shootingstarsindoorsoccer.com/soccer-camp-booking"
             style={{ width: '100%', border: 'none', minHeight: '700px', borderRadius: '8px' }}
-            scrolling="no"
+            scrolling="yes"
             title="Book a Birthday Party"
           />
         </div>
