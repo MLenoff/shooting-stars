@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
-import { createBookingEvent } from '@/lib/calendar';
+import { createBookingEvent, createPurchaseEvent } from '@/lib/calendar';
 import { supabaseAdmin } from '@/lib/supabase';
 import { incrementSpot, getAcademyAgeGroup } from '@/lib/spots';
 
@@ -43,6 +43,16 @@ const PACK_SESSIONS: Record<string, number> = {
   'training-20pack': 20,
   'group-training-10pack': 10,
   'group-training-20pack': 20,
+};
+
+// Training packs: no purchase-date invite — the invite goes on the actual session date via createBookingEvent
+const TRAINING_PACKS = new Set(Object.keys(PACK_SESSIONS));
+
+// Classes where the calendar invite should land on the class start date, not the purchase date
+const CLASS_START_DATES: Record<string, string> = {
+  'twinkle-stars': '2026-08-29',
+  'little-stars': '2026-08-29',
+  'autism-kicks': '2026-08-22',
 };
 
 const PROGRAM_TAB_MAP: Record<string, string> = {
@@ -244,6 +254,18 @@ export async function POST(req: NextRequest) {
       data: { name: customerName },
       redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/my-sessions`,
     }).catch(() => {});
+    // Training packs: calendar invite goes on the actual session date (via createBookingEvent), not purchase date
+  }
+
+  // 3b. Calendar invite for non-training-pack programs
+  if (customerEmail && !TRAINING_PACKS.has(programId)) {
+    const purchaseDate = new Date();
+    const eventDate = CLASS_START_DATES[programId]; // undefined = use purchase date
+    try {
+      await createPurchaseEvent({ customerName, customerEmail, programName, purchaseDate, eventDate });
+    } catch (err) {
+      console.error('Purchase calendar event error:', err);
+    }
   }
 
   // 4. Calendar event

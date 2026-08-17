@@ -205,6 +205,7 @@ export async function createBookingEvent({
 
   await calendar.events.insert({
     calendarId: CALENDAR_ID,
+    sendUpdates: customerEmail ? 'all' : 'none',
     requestBody: {
       summary: `${programName} | ${customerName}`,
       description: [
@@ -218,6 +219,50 @@ export async function createBookingEvent({
       ].filter(Boolean).join('\n'),
       start: { dateTime: toLocalISO(startDateTime), timeZone: 'America/New_York' },
       end: { dateTime: toLocalISO(endDateTime), timeZone: 'America/New_York' },
+      attendees: customerEmail ? [{ email: customerEmail, displayName: customerName }] : undefined,
+    },
+  });
+}
+
+export async function createPurchaseEvent({
+  customerName,
+  customerEmail,
+  programName,
+  sessionsTotal,
+  purchaseDate,
+  eventDate,
+}: {
+  customerName: string;
+  customerEmail: string;
+  programName: string;
+  sessionsTotal?: number;
+  purchaseDate: Date;
+  // ISO date string (YYYY-MM-DD) to override the calendar event date.
+  // Used for programs where the event should appear on the class start date
+  // rather than the purchase date.
+  eventDate?: string;
+}) {
+  const auth = getAuth();
+  const calendar = google.calendar({ version: 'v3', auth });
+
+  const dateStr = eventDate ?? new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(purchaseDate);
+  const dateDisplay = eventDate
+    ? new Date(`${eventDate}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : purchaseDate.toLocaleDateString('en-US', { timeZone: 'America/New_York', month: 'long', day: 'numeric', year: 'numeric' });
+
+  const description = sessionsTotal
+    ? `${sessionsTotal} sessions purchased on ${new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(purchaseDate)}\nCustomer: ${customerName}\nEmail: ${customerEmail}`
+    : `Registered for ${programName} starting ${dateDisplay}\nCustomer: ${customerName}\nEmail: ${customerEmail}`;
+
+  await calendar.events.insert({
+    calendarId: CALENDAR_ID,
+    sendUpdates: 'all',
+    requestBody: {
+      summary: sessionsTotal ? `${customerName} purchased ${programName}` : `${customerName} — ${programName}`,
+      description,
+      start: { date: dateStr },
+      end: { date: dateStr },
+      attendees: [{ email: customerEmail, displayName: customerName }],
     },
   });
 }
