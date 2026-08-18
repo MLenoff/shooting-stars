@@ -205,7 +205,6 @@ export async function createBookingEvent({
 
   await calendar.events.insert({
     calendarId: CALENDAR_ID,
-    sendUpdates: customerEmail ? 'all' : 'none',
     requestBody: {
       summary: `${programName} | ${customerName}`,
       description: [
@@ -219,7 +218,6 @@ export async function createBookingEvent({
       ].filter(Boolean).join('\n'),
       start: { dateTime: toLocalISO(startDateTime), timeZone: 'America/New_York' },
       end: { dateTime: toLocalISO(endDateTime), timeZone: 'America/New_York' },
-      attendees: customerEmail ? [{ email: customerEmail, displayName: customerName }] : undefined,
     },
   });
 }
@@ -256,13 +254,11 @@ export async function createPurchaseEvent({
 
   await calendar.events.insert({
     calendarId: CALENDAR_ID,
-    sendUpdates: 'all',
     requestBody: {
       summary: sessionsTotal ? `${customerName} purchased ${programName}` : `${customerName} — ${programName}`,
       description,
       start: { date: dateStr },
       end: { date: dateStr },
-      attendees: [{ email: customerEmail, displayName: customerName }],
     },
   });
 }
